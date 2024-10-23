@@ -26,7 +26,7 @@ module.exports = sequelize.define('project', {
     allowNull: false,
     validate: {
       isIn: {
-        args: [[true, false]],
+        args: [[  true, false]],
         msg: 'isFeatured value must be true or false',
       },
     },
@@ -93,21 +93,21 @@ module.exports = sequelize.define('project', {
   },
   category: {
     type: DataTypes.ARRAY(DataTypes.STRING),
-    allowNull: false,
-    validate: {
-      notNull: {
-        msg: 'category cannot be null',
-      },
-    },
+    // allowNull: false,
+    // validate: {
+    //   notNull: {
+    //     msg: 'category cannot be null',
+    //   },
+    // },
   },
   tags: {
     type: DataTypes.ARRAY(DataTypes.STRING),
-    allowNull: false,
-    validate: {
-      notNull: {
-        msg: 'tags cannot be null',
-      },
-    },
+    // allowNull: false,
+    // validate: {
+    //   notNull: {
+    //     msg: 'tags cannot be null',
+    //   },
+    // },
   },
   createdBy: {
     type: DataTypes.INTEGER,
@@ -128,5 +128,5 @@ module.exports = sequelize.define('project', {
   {
     paranoid: true,
     freezeTableName: true,
-    modelName: 'project',
+    modelName: 'project',    
   })
