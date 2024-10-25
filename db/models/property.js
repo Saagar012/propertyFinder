@@ -68,7 +68,7 @@ const property = sequelize.define('property', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: User,
+            model: 'user',
             key: 'id',
         },
         onUpdate: 'CASCADE',
@@ -78,7 +78,7 @@ const property = sequelize.define('property', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: propertyType,
+            model: 'propertyType',
             key: 'id',
         },
         onUpdate: 'CASCADE',
@@ -100,13 +100,6 @@ const property = sequelize.define('property', {
     })
 
 // Define relationships
-
-user.hasMany(property, { foreignKey: 'userId' });
-property.belongsTo(user, { foreignKey: 'userId' });
-
-user.hasMany(property, { foreignKey: 'createdBy' });
-property.belongsTo(user, { foreignKey: 'createdBy' });
-
 
 propertyType.hasMany(property, { foreignKey: 'propertyTypeId' });
 property.belongsTo(propertyType, { foreignKey: 'propertyTypeId' });

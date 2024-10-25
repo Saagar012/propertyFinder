@@ -9,7 +9,6 @@ const sequelize = require('../../config/database');
 const AppError = require('../../utils/appError');
 const project = require('./project');
 const property = require('./property');
-const { use } = require('../../route/projectRoute');
 
 const user = sequelize.define('user',
   {
@@ -105,6 +104,11 @@ project.belongsTo(user, {
   foreignKey:'createdBy',
 });
 
+user.hasMany(property, { foreignKey: 'userId' });
+property.belongsTo(user, { foreignKey: 'userId' });
+
+user.hasMany(property, { foreignKey: 'createdBy' });
+property.belongsTo(user, { foreignKey: 'createdBy' });
 
 
 module.exports = user;
