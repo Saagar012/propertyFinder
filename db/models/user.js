@@ -7,8 +7,11 @@ const bcrypt = require("bcrypt");
 
 const sequelize = require('../../config/database');
 const AppError = require('../../utils/appError');
+const project = require('./project');
+const property = require('./property');
+const { use } = require('../../route/projectRoute');
 
-module.exports = sequelize.define('user',
+const user = sequelize.define('user',
   {
     id: {
       allowNull: false,
@@ -17,7 +20,7 @@ module.exports = sequelize.define('user',
       type: DataTypes.STRING
     },
     userType: {
-      type: DataTypes.ENUM('0','1','2'),
+      type: DataTypes.ENUM('0','1','2'), 
       allowNull:false,
       validate:{
         notNull:{
@@ -95,4 +98,13 @@ module.exports = sequelize.define('user',
     freezeTableName: true,
     modelName:'user'
   }
-)
+);
+
+user.hasMany(project, {foreignKey: 'createdBy'})
+project.belongsTo(user, { 
+  foreignKey:'createdBy',
+});
+
+
+
+module.exports = user;

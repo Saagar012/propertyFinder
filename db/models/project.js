@@ -112,7 +112,7 @@ module.exports = sequelize.define('project', {
   createdBy: {
     type: DataTypes.INTEGER,
     references: {
-      model: 'User',
+      model: 'user',
       key: 'id',
     },
   },
