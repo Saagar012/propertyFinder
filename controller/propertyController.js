@@ -3,17 +3,19 @@ const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const property = require("../db/models/property");
 
-const createProperty = catchAsync(async(req,resp,next) => {
-    const body = req.body;
+const createProperty =  catchAsync(async(req,resp,next) => {
+    const body = JSON.parse(req.body.data);
+
     const userId = req.user.id;
 
+    const images = req.files.map((file) => file.path);
+
     const newProperty = await property.create({
-        id: body.id,
         title: body.title,
         location:body.location,
         latitude: body.latitude,
         longitude: body.longitude,
-        propertyImage: body.propertyImage,
+        propertyImage: images,
         price: body.price,
         status: body.status,
         description: body.description,
@@ -21,10 +23,12 @@ const createProperty = catchAsync(async(req,resp,next) => {
         userId:body.userId,
         createdBy: userId,
     });
+
     return resp.status(201).json({
         status: 'success',
         data: newProperty,
     });
+
 })
 
 
@@ -45,7 +49,7 @@ const getPropertyById = catchAsync(async(req,resp,next)=>{
 
     if(!result){
         return next(new AppError('Invalid Property Id', 400))
-    }
+    }   
 
     return resp.json({
         status: 'success',
