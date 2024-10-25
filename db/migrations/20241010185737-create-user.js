@@ -10,7 +10,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       userType: {
-        type: Sequelize.ENUM('0','1','2')
+        type: Sequelize.ENUM('0','1','2'),
       },
       firstName: {
         type: Sequelize.STRING
@@ -19,10 +19,14 @@ module.exports = {
         type: Sequelize.STRING
       },
       email: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        unique:true,
       },
       password: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+      },
+      confirmPassword: {
+        type: Sequelize.STRING,
       },
       createdAt: {
         allowNull: false,
