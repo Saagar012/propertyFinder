@@ -17,23 +17,50 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true,
       },
-      location: {
+      category: {
+        type: Sequelize.ENUM('RENT', 'SALE'),
+        allowNull: false,
+      },
+      country: {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      city: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      zipCode: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      streetAddress: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      bedrooms: {
+        type: Sequelize.INTEGER,
+      },
+      bathrooms: {
+        type: Sequelize.INTEGER,
+      },
+      parkingSpots: {
+        type: Sequelize.INTEGER,
+      },
+      amenities: {
+        type: Sequelize.JSONB,
+        allowNull: true,
+      },
       latitude: {
         type: Sequelize.DECIMAL(10, 8),
-        allowNull: true,
       },
       longitude: {
         type: Sequelize.DECIMAL(11, 8),
-        allowNull: true,
       },
       propertyImage: {
         type: Sequelize.ARRAY(Sequelize.STRING),
         allowNull: false,
       },
-      price: {
+      priceAmountPerAnnum: {
         type: Sequelize.DECIMAL,
         allowNull: false,
       },
@@ -45,7 +72,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'user',  // Referencing the 'user' table
+          model: 'user',
           key: 'id',
         },
         onUpdate: 'CASCADE',
@@ -55,19 +82,22 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'propertyType',  // Referencing the 'propertyType' table
+          model: 'propertyType',
           key: 'id',
         },
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       },
+      contactInfo: {
+        type: Sequelize.JSONB,
+        allowNull: false,
+      },
       createdBy: {
         type: Sequelize.INTEGER,
         references: {
-          model: 'user',  // Referencing the 'user' table
+          model: 'user',
           key: 'id',
         },
-        allowNull: true,
       },
       createdAt: {
         allowNull: false,
@@ -78,8 +108,7 @@ module.exports = {
         type: Sequelize.DATE,
       },
       deletedAt: {
-        type: Sequelize.DATE,  // For soft deletion
-        allowNull: true,
+        type: Sequelize.DATE,
       },
     });
   },

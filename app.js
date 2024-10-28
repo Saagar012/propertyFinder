@@ -1,5 +1,6 @@
 require('dotenv').config({path: `${process.cwd()}/.env`});
 const express = require('express');
+const cors = require('cors');  // Import CORS
 const app = express();
 const authRouter = require('./route/authRoute');
 const propertyRoute = require('./route/propertyRoute');
@@ -10,6 +11,12 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controller/errorController');
 
 app.use(express.json());
+
+app.use(cors({
+  origin: 'http://localhost:4200',
+  methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE'], // Allow specific methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+}));
 
  app.get('/', (req,res) => {
     res.status(200).json({
@@ -30,7 +37,6 @@ app.use('*',
         throw new AppError(`cant find the ${ req.originalUrl} on this server`, 404);
 })
 );
-
 app.use(globalErrorHandler);
 
 app.listen(process.env.APP_PORT || 4000, () => {

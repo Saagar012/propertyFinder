@@ -18,7 +18,6 @@ const signup = catchAsync (async(req,res,next) => {
     const body = req.body;
     if(!['1','2'].includes (body.userType))
         throw new AppError('Invalid User Type', 400);
-
         const newUser = await user.create({
             userType: body.userType,
             firstName: body.firstName,
@@ -32,6 +31,8 @@ const signup = catchAsync (async(req,res,next) => {
     }
         // result
         const result = newUser.toJSON();
+        console.log("result", result);
+
 
       
         delete result.password;
@@ -62,6 +63,9 @@ const login = catchAsync(async (req,res,next) => {
     })
     return res.json({
         status: 'success',
+        user: {
+            firstName: result.firstName
+        },
         token,
     })
 });  
