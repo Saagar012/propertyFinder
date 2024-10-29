@@ -21,6 +21,22 @@ const property = sequelize.define('property', {
             },
         },
     },
+    totalArea: {
+      type: DataTypes.FLOAT,  // You can also use DataTypes.DECIMAL if you want more precision
+      allowNull: false,
+      validate: {
+          notNull: {
+              msg: 'Total area cannot be null',
+          },
+          isFloat: {
+              msg: 'Total area must be a numeric value',
+          },
+          min: {
+              args: [0],
+              msg: 'Total area must be greater than or equal to 0',
+          },
+      },
+  },
     description: {
         type: DataTypes.TEXT,
         allowNull: true,

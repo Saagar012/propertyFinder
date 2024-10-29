@@ -2,6 +2,7 @@ const { user } = require("../db/models/user");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const property = require("../db/models/property");
+const { PRICE_PERIODS } = require("../utils/staticData");
 
 const createProperty =  catchAsync(async(req,resp,next) => {
     const body = JSON.parse(req.body.data);
@@ -10,18 +11,33 @@ const createProperty =  catchAsync(async(req,resp,next) => {
 
     const images = req.files.map((file) => file.path);
 
+    let annualPrice = body.price.amount;
+    if (body.price.timeDuration === PRICE_PERIODS.MONTHLY) {
+      annualPrice *= 12; 
+    }
+  
+
     const newProperty = await property.create({
         title: body.title,
-        location:body.location,
+        description: body.description,
+        category: body.category, // RENT or SALE
+        country: body.country,
+        city: body.city,
+        zipCode: body.zipCode,
+        streetAddress: body.streetAddress,
+        bedrooms: body.bedrooms,
+        bathrooms: body.bathrooms,
+        parkingSpots: body.parkingSpots,
+        amenities: body.amenities, // JSON object
         latitude: body.latitude,
         longitude: body.longitude,
-        propertyImage: images,
-        price: body.price,
-        status: body.status,
-        description: body.description,
+        propertyImage: images, // Array of image paths
+        priceAmountPerAnnum: annualPrice, // Updated price field
+        status: body.status, // AVAILABLE, SOLD, etc.
         propertyTypeId: body.propertyTypeId,
-        userId:body.userId,
-        createdBy: userId,
+        userId: body.userId, // Creator’s user ID
+        createdBy: userId, // Set the user who created it
+        contactInfo: body.contactInfo, // Contact details as JSON    
     });
 
     return resp.status(201).json({

@@ -32,9 +32,6 @@ const signup = catchAsync (async(req,res,next) => {
         // result
         const result = newUser.toJSON();
         console.log("result", result);
-
-
-      
         delete result.password;
         delete result.deletedAt;
 

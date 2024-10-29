@@ -18,6 +18,7 @@ module.exports = {
 
     await queryInterface.addColumn('property', 'city', {
       type: Sequelize.STRING,
+    
       allowNull: true,
     });
 
@@ -59,6 +60,15 @@ module.exports = {
       validate: {
         notNull: { msg: 'Price amount cannot be null' },
         isDecimal: { msg: 'Price must be a decimal value' },
+      },
+    });
+    await queryInterface.addColumn('property', 'totalArea', {
+      type: Sequelize.FLOAT,
+      allowNull: false,
+      defaultValue:0.0,
+      validate: {
+        notNull: { msg: 'Total area cannot be null' },
+        isFloat: { msg: 'Total area must be a numeric value' },
       },
     });
   },
