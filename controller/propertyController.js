@@ -6,6 +6,7 @@ const { PRICE_PERIODS } = require("../utils/staticData");
 
 const createProperty =  catchAsync(async(req,resp,next) => {
     const body = JSON.parse(req.body.data);
+    console.log(body);
 
     const userId = req.user.id;
 
@@ -27,14 +28,15 @@ const createProperty =  catchAsync(async(req,resp,next) => {
         streetAddress: body.streetAddress,
         bedrooms: body.bedrooms,
         bathrooms: body.bathrooms,
-        parkingSpots: body.parkingSpots,
+        parkingSpots:  body.parkingSpots,
+        // totalArea: body.totalAreaInMeterSq,
         amenities: body.amenities, // JSON object
-        latitude: body.latitude,
-        longitude: body.longitude,
+        latitude: 0,
+        longitude: 0,
         propertyImage: images, // Array of image paths
         priceAmountPerAnnum: annualPrice, // Updated price field
         status: body.status, // AVAILABLE, SOLD, etc.
-        propertyTypeId: body.propertyTypeId,
+        propertyTypeId: body.propertyType,
         userId: body.userId, // Creator’s user ID
         createdBy: userId, // Set the user who created it
         contactInfo: body.contactInfo, // Contact details as JSON    

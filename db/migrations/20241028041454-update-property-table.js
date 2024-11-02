@@ -62,14 +62,14 @@ module.exports = {
         isDecimal: { msg: 'Price must be a decimal value' },
       },
     });
-    await queryInterface.addColumn('property', 'totalArea', {
+    await queryInterface.addColumn('property', 'totalAreaInMeterSq', {
       type: Sequelize.FLOAT,
-      allowNull: false,
+      allowNull: true,
       defaultValue:0.0,
-      validate: {
-        notNull: { msg: 'Total area cannot be null' },
-        isFloat: { msg: 'Total area must be a numeric value' },
-      },
+      // validate: {
+      //   notNull: { msg: 'Total area cannot be null' },
+      //   isFloat: { msg: 'Total area must be a numeric value' },
+      // },
     });
   },
 
