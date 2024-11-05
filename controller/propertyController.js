@@ -2,6 +2,9 @@ const { user } = require("../db/models/user");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const property = require("../db/models/property");
+const fs = require('fs');
+const path = require('path');
+
 const { PRICE_PERIODS } = require("../utils/staticData");
 
 const createProperty =  catchAsync(async(req,resp,next) => {
@@ -10,7 +13,7 @@ const createProperty =  catchAsync(async(req,resp,next) => {
 
     const userId = req.user.id;
 
-    const images = req.files.map((file) => file.path);
+    const images = req.files.map((file) => file.filename);
 
     let annualPrice = body.price.amount;
     if (body.price.timeDuration === PRICE_PERIODS.MONTHLY) {
@@ -41,13 +44,28 @@ const createProperty =  catchAsync(async(req,resp,next) => {
         createdBy: userId, // Set the user who created it
         contactInfo: body.contactInfo, // Contact details as JSON    
     });
+    const propertyId = newProperty.id;
 
-    return resp.status(201).json({
-        status: 'success',
-        data: newProperty,
+    console.log("proeprty id" , newProperty.id);
+
+    // Step 2: Move images to final folder named by propertyId
+    const finalDir = `uploads/${propertyId}`;
+    fs.mkdirSync(finalDir, { recursive: true });
+  
+    const imagePaths = [];
+    req.files.forEach((file) => {
+        console.log(file);
+      const finalPath = path.join(finalDir, file.filename);
+      fs.renameSync(file.path, finalPath); // Move file
+      imagePaths.push(finalPath);
     });
-
-})
+  
+  
+    return resp.status(201).json({
+      status: 'success',
+      message: 'Property created with images successfully',
+    });
+  });
 
 
 const getAllProperties = catchAsync(async(req,resp,next)=>{

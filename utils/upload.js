@@ -7,10 +7,9 @@ const fs = require('fs'); // Import the fs module
 // Set storage engine
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const propertyId = 1; // Extract from URL
-    const dir = `uploads/${propertyId}`; // Create folder using propertyId
-    fs.mkdirSync(dir, { recursive: true }); // Ensure directory exists
-    cb(null, dir);
+    const tempDir = `uploads/temp`;
+    fs.mkdirSync(tempDir, { recursive: true });
+    cb(null, tempDir); 
   },
   filename: (req, file, cb) => {
     // Generate a unique filename: propertyId-timestamp.ext
