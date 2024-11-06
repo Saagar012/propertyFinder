@@ -3,6 +3,12 @@ const path = require('path');
 const AppError = require("../utils/appError");
 const fs = require('fs'); // Import the fs module
 
+// Sanitize filenames by removing spaces and special characters
+function sanitizeFileName(filename) {
+  // Trim spaces and replace spaces with dashes
+  const sanitizedName = filename.trim().replace(/\s+/g, '-').replace(/[^\w.-]/g, '');
+  return sanitizedName;
+}
 
 // Set storage engine
 const storage = multer.diskStorage({
@@ -13,8 +19,10 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     // Generate a unique filename: propertyId-timestamp.ext
+    
     const uniqueSuffix = `${Date.now()}-${path.extname(file.originalname)}`;
-    cb(null, `${uniqueSuffix}`);
+    const sanitizedName = sanitizeFileName(uniqueSuffix);
+    cb(null, `${sanitizedName}`);
   },
 });
 

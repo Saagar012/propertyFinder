@@ -4,10 +4,13 @@ const AppError = require("../utils/appError");
 const property = require("../db/models/property");
 const fs = require('fs');
 const path = require('path');
+const express = require('express');
 
 const { PRICE_PERIODS } = require("../utils/staticData");
 
-const createProperty =  catchAsync(async(req,resp,next) => {
+
+
+const createProperty = catchAsync(async (req, resp, next) => {
     const body = JSON.parse(req.body.data);
     console.log(body);
 
@@ -17,9 +20,9 @@ const createProperty =  catchAsync(async(req,resp,next) => {
 
     let annualPrice = body.price.amount;
     if (body.price.timeDuration === PRICE_PERIODS.MONTHLY) {
-      annualPrice *= 12; 
+        annualPrice *= 12;
     }
-  
+
 
     const newProperty = await property.create({
         title: body.title,
@@ -31,7 +34,7 @@ const createProperty =  catchAsync(async(req,resp,next) => {
         streetAddress: body.streetAddress,
         bedrooms: body.bedrooms,
         bathrooms: body.bathrooms,
-        parkingSpots:  body.parkingSpots,
+        parkingSpots: body.parkingSpots,
         // totalArea: body.totalAreaInMeterSq,
         amenities: body.amenities, // JSON object
         latitude: 0,
@@ -46,93 +49,132 @@ const createProperty =  catchAsync(async(req,resp,next) => {
     });
     const propertyId = newProperty.id;
 
-    console.log("proeprty id" , newProperty.id);
 
     // Step 2: Move images to final folder named by propertyId
     const finalDir = `uploads/${propertyId}`;
     fs.mkdirSync(finalDir, { recursive: true });
-  
+
     const imagePaths = [];
     req.files.forEach((file) => {
         console.log(file);
-      const finalPath = path.join(finalDir, file.filename);
-      fs.renameSync(file.path, finalPath); // Move file
-      imagePaths.push(finalPath);
+        const finalPath = path.join(finalDir, file.filename);
+        fs.renameSync(file.path, finalPath); // Move file
+        imagePaths.push(finalPath);
     });
-  
-  
+
+
     return resp.status(201).json({
-      status: 'success',
-      message: 'Property created with images successfully',
+        status: 'success',
+        message: 'Property created with images successfully',
     });
-  });
+});
 
 
-const getAllProperties = catchAsync(async(req,resp,next)=>{
+const getAllProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
-    const result = await property.findAll({
+    const properties = await property.findAll({
         include: user,
         where: { createdBy: userId },
     });
+
+
+    // Construct the image URLs for each property
+    const propertiesWithImages = properties.map(property => {
+        const images = [];
+
+        // Loop through the stored image names for this property
+        if (property.propertyImage && property.propertyImage.length > 0) {
+            property.propertyImage.forEach(imageName => {
+                // Construct the image URL based on property ID and image name
+                const imageUrl = `${process.env.LOCAL_API}/uploads/${property.id}/${imageName}`;
+                images.push(imageUrl);
+            });
+        }
+
+        return {
+            ...property.toJSON(),
+            images, // Add images URLs to the property object
+        };
+    });
+
     return resp.json({
         status: 'success',
-        data: result,
-    })
-})
-const getPropertyById = catchAsync(async(req,resp,next)=>{
-    const propertyId = req.params.id;
-    const result = await property.findByPk(propertyId, {include: user});
+        data: propertiesWithImages,
+    });
 
-    if(!result){
+});
+
+
+const getPropertyById = catchAsync(async (req, resp, next) => {
+    const propertyId = req.params.id;
+    const result = await property.findByPk(propertyId, { include: user });
+
+    if (!result) {
         return next(new AppError('Invalid Property Id', 400))
-    }   
+    }
 
+    // Construct the image URLs for each property
+    // Initialize an array to store image URLs
+    const images = [];
+
+    // Construct the image URLs for this specific property
+    if (result.propertyImage && result.propertyImage.length > 0) {
+        result.propertyImage.forEach(imageName => {
+            // Construct the image URL based on the property ID and image name
+            const imageUrl = `${process.env.LOCAL_API}/uploads/${result.id}/${imageName}`;
+            images.push(imageUrl);
+        });
+    }
+
+    // Return the property details along with the image URLs
     return resp.json({
         status: 'success',
-        data: result,
+        data: {
+            ...result.dataValues,  // Property data
+            images,  // Add the constructed image URLs
+        },
+    });
+});
+
+    const updateProperty = catchAsync(async (req, resp, next) => {
+        const userId = req.user.id;
+        const propertyId = req.params.id;
+        const body = req.body;
+        const result = await property.findByPk(propertyId);
+
+        if (!result) {
+            return next(new AppError('Invalid property id'), 400);
+        }
+        result.title = body.title;
+        result.location = body.location;
+        result.latitude = body.latitude;
+        result.description = body.description;
+        result.propertyImage = body.propertyImage;
+        result.propertyTypeId = body.propertyTypeId;
+
+        const updatedResult = await result.save();
+
+        return resp.json({
+            status: 'success',
+            data: updatedResult,
+        });
+
     })
-})
 
 
-const updateProperty = catchAsync(async(req,resp,next)=>{
-    const userId = req.user.id;
-    const propertyId = req.params.id;
-    const body = req.body;
-    const result = await property.findByPk(propertyId);
+    const deleteProperty = catchAsync(async (req, resp, next) => {
+        const propertyId = req.params.id;
+        const result = await property.findByPk(propertyId);
+        if (!result) {
+            return next(new AppError('Invalid property id'), 400);
+        }
 
-    if(!result){
-        return next(new AppError('Invalid property id'), 400);
-    }
-    result.title = body.title;
-    result.location = body.location;
-    result.latitude = body.latitude;
-    result.description = body.description;
-    result.propertyImage = body.propertyImage;
-    result.propertyTypeId = body.propertyTypeId;
+        await result.destroy();
 
-    const updatedResult = await result.save();
+        return resp.json({
+            status: 'success',
+            message: 'Property deleted successfully',
+        });
 
-    return resp.json({
-        status: 'success',
-        data: updatedResult,
-    });
-
-})
-
-
-const deleteProperty = catchAsync(async(req,resp,next)=>{
-    const propertyId = req.params.id;
-    const result = await property.findByPk(propertyId);
-    if(!result){
-        return next(new AppError('Invalid property id'), 400);
-    }
-
-     await result.destroy();
-
-    return resp.json({
-        status: 'success',
-        message: 'Property deleted successfully',
-    });
-
-})
-module.exports = {createProperty, getAllProperties, getPropertyById, updateProperty, deleteProperty};
+    })
+    module.exports = { createProperty, getAllProperties, getPropertyById, updateProperty, deleteProperty };

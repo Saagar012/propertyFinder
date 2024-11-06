@@ -5,6 +5,7 @@ const app = express();
 const authRouter = require('./route/authRoute');
 const propertyRoute = require('./route/propertyRoute');
 const projectRouter = require('./route/projectRoute');
+const path = require('path');
 
 const catchAsync = require('./utils/catchAsync');
 const AppError = require('./utils/appError');
@@ -30,6 +31,16 @@ app.use(cors({
 app.use('/api/v1/auth',authRouter);
 app.use('/api/v1/projects',projectRouter )
 app.use('/api/v1/property',propertyRoute )
+
+// Serve static files from the 'uploads' folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Debug: Log the requested URL when an image is requested
+app.use('/uploads', (req, res, next) => {
+    console.log('Requested image path:', req.url); // Logs the requested URL for images
+    next();
+});
+
 
 
 app.use('*', 
