@@ -21,18 +21,62 @@ const property = sequelize.define('property', {
             },
         },
     },
+    totalAreaInMeterSq: {
+      type: DataTypes.FLOAT,  // You can also use DataTypes.DECIMAL if you want more precision
+      allowNull: true,
+      // validate: {
+      //     notNull: {
+      //         msg: 'Total area cannot be null',
+      //     },
+      //     isFloat: {
+      //         msg: 'Total area must be a numeric value',
+      //     },
+      //     min: {
+      //         args: [0],
+      //         msg: 'Total area must be greater than or equal to 0',
+      //     },
+      // },
+  },
     description: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    location: {
-        type: DataTypes.STRING,
+    category: {
+        type: DataTypes.ENUM('RENT', 'SALE'),
         allowNull: false,
         validate: {
-            notNull: { msg: 'Location cannot be null' },
-            notEmpty: { msg: 'Location cannot be empty' },
+          notNull: { msg: 'Category cannot be null' },
         },
-    },
+      },
+      country: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      city: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      zipCode: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      streetAddress: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      bedrooms: {
+        type: DataTypes.INTEGER,
+      },
+      bathrooms: {
+        type: DataTypes.INTEGER,
+      },
+      parkingSpots: {
+        type: DataTypes.INTEGER,
+      },
+      amenities: {
+        type: DataTypes.JSONB, // Store amenities as a JSON object
+        allowNull: true,
+      },
     latitude: {
         type: DataTypes.DECIMAL(10, 8),  // Suitable for geographic coordinates
     },
@@ -48,18 +92,14 @@ const property = sequelize.define('property', {
             },
         },
     },
-    price: {
+    priceAmountPerAnnum: {
         type: DataTypes.DECIMAL,
         allowNull: false,
         validate: {
-            notNull: {
-                msg: 'price cannot be null',
-            },
-            isDecimal: {
-                msg: 'price value must be in decimal',
-            },
+          notNull: { msg: 'Price amount cannot be null' },
+          isDecimal: { msg: 'Price must be a decimal value' },
         },
-    },
+      },
     status: {
         type: DataTypes.ENUM('AVAILABLE', 'SOLD', 'RENTED', 'EXPIRED'),
         defaultValue: 'AVAILABLE',
@@ -84,6 +124,10 @@ const property = sequelize.define('property', {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',  // If the type is deleted, the relation is set to NULL
     },
+    contactInfo: {
+        type: DataTypes.JSONB, // Store contact information as a JSON object
+        allowNull: false,
+      },
     createdBy: {
         type: DataTypes.INTEGER,
         references: {
