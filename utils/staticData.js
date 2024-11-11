@@ -1,6 +1,6 @@
 const PRICE_PERIODS = {
     MONTHLY: 'MONTHLY',
-    ANNUAL: 'ANNUAL',
+    ANNUALLY: 'ANNUALLY',
   };
 
   

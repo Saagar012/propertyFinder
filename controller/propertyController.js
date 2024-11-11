@@ -12,7 +12,6 @@ const { PRICE_PERIODS } = require("../utils/staticData");
 
 const createProperty = catchAsync(async (req, resp, next) => {
     const body = JSON.parse(req.body.data);
-    console.log(body);
 
     const userId = req.user.id;
 
@@ -35,7 +34,7 @@ const createProperty = catchAsync(async (req, resp, next) => {
         bedrooms: body.bedrooms,
         bathrooms: body.bathrooms,
         parkingSpots: body.parkingSpots,
-        // totalArea: body.totalAreaInMeterSq,
+        totalAreaInMeterSq: body.totalArea,
         amenities: body.amenities, // JSON object
         latitude: 0,
         longitude: 0,
