@@ -43,7 +43,14 @@ module.exports = {
     await queryInterface.addColumn('property', 'parkingSpots', {
       type: Sequelize.INTEGER,
     });
-
+    await queryInterface.addColumn('property', 'propertyType', {
+      type: Sequelize.ENUM('HOUSE', 'APARTMENT','COMMERCIAL'),
+      allowNull: false,
+      defaultValue:'HOUSE',
+      validate: {
+        notNull: { msg: 'Property Type cannot be null' },
+      },
+    });
     await queryInterface.addColumn('property', 'amenities', {
       type: Sequelize.JSONB,
       allowNull: true,
@@ -64,26 +71,30 @@ module.exports = {
     });
     await queryInterface.addColumn('property', 'totalAreaInMeterSq', {
       type: Sequelize.FLOAT,
-      allowNull: true,
+      allowNull: false,
       defaultValue:0.0,
-      // validate: {
-      //   notNull: { msg: 'Total area cannot be null' },
-      //   isFloat: { msg: 'Total area must be a numeric value' },
-      // },
+      validate: {
+        notNull: { msg: 'Total area cannot be null' },
+        isFloat: { msg: 'Total area must be a numeric value' },
+        min:{msg: 'Total area must be greater than or equal to 0'}
+      },
     });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('property', 'category');
-    await queryInterface.removeColumn('property', 'country');
-    await queryInterface.removeColumn('property', 'city');
-    await queryInterface.removeColumn('property', 'zipCode');
-    await queryInterface.removeColumn('property', 'streetAddress');
-    await queryInterface.removeColumn('property', 'bedrooms');
-    await queryInterface.removeColumn('property', 'bathrooms');
-    await queryInterface.removeColumn('property', 'parkingSpots');
-    await queryInterface.removeColumn('property', 'amenities');
-    await queryInterface.removeColumn('property', 'contactInfo');
-    await queryInterface.removeColumn('property', 'priceAmountPerAnnum');
+    // await queryInterface.removeColumn('property', 'category');
+    // await queryInterface.removeColumn('property', 'country');
+    // await queryInterface.removeColumn('property', 'city');
+    // await queryInterface.removeColumn('property', 'zipCode');
+    // await queryInterface.removeColumn('property', 'streetAddress');
+    // await queryInterface.removeColumn('property', 'bedrooms');
+    // await queryInterface.removeColumn('property', 'bathrooms');
+    // await queryInterface.removeColumn('property', 'parkingSpots');
+    // await queryInterface.removeColumn('property', 'amenities');
+    // await queryInterface.removeColumn('property', 'contactInfo');
+    // await queryInterface.removeColumn('property', 'priceAmountPerAnnum');
+    // await queryInterface.removeColumn('property', 'totalAreaInMeterSq');
+    // await queryInterface.removeColumn('property', 'propertyType');
+
   },
 };

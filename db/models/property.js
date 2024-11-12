@@ -23,19 +23,20 @@ const property = sequelize.define('property', {
     },
     totalAreaInMeterSq: {
       type: DataTypes.FLOAT,  // You can also use DataTypes.DECIMAL if you want more precision
-      allowNull: true,
-      // validate: {
-      //     notNull: {
-      //         msg: 'Total area cannot be null',
-      //     },
-      //     isFloat: {
-      //         msg: 'Total area must be a numeric value',
-      //     },
-      //     min: {
-      //         args: [0],
-      //         msg: 'Total area must be greater than or equal to 0',
-      //     },
-      // },
+      allowNull: false,
+
+      validate: {
+          notNull: {
+              msg: 'Total area cannot be null',
+          },
+          isFloat: {
+              msg: 'Total area must be a numeric value',
+          },
+          min: {
+              args: [0],
+              msg: 'Total area must be greater than or equal to 0',
+          },
+      },
   },
     description: {
         type: DataTypes.TEXT,
@@ -114,15 +115,9 @@ const property = sequelize.define('property', {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
     },
-    propertyTypeId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'propertyType',
-            key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',  // If the type is deleted, the relation is set to NULL
+    propertyType: {
+        type: DataTypes.ENUM('HOUSE', 'COMMERCIAL', 'APARTMENT'),
+        defaultValue: 'HOUSE',
     },
     contactInfo: {
         type: DataTypes.JSONB, // Store contact information as a JSON object
@@ -142,11 +137,5 @@ const property = sequelize.define('property', {
         freezeTableName: true,
         modelName: 'property',
     })
-
-// Define relationships
-
-propertyType.hasMany(property, { foreignKey: 'propertyTypeId' });
-property.belongsTo(propertyType, { foreignKey: 'propertyTypeId' });
-
 
 module.exports = property;
