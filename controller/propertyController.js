@@ -79,9 +79,9 @@ const getAllProperties = catchAsync(async (req, resp, next) => {
         offset: (parseInt(page) - 1) * parseInt(limit),
     };
     // Add filters conditionally
-    if (city) query.where.city = city;
-    if (country) query.where.country = country;
-    if (propertyType) query.where.propertyType = propertyType;
+    if (city) query.where.city = { [Op.iLike]: `%${city}%` }; // Case-insensitive filter
+    if (country) query.where.country = { [Op.iLike]: `%${country}%` };
+    if (propertyType) query.where.propertyType = { [Op.iLike]: `%${propertyType}%` };
     if (bedrooms) query.where.bedrooms = bedrooms;
     if (bathrooms) query.where.bathrooms = bathrooms;
 
