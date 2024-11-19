@@ -148,6 +148,84 @@ const getAllProperties = catchAsync(async (req, resp, next) => {
 
 });
 
+const getFilteredProperties = catchAsync(async (req, resp, next) => {
+    // const userId = req.user.id;
+    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
+
+    const query = {
+        include: user,
+        limit: parseInt(limit),
+        offset: (parseInt(page) - 1) * parseInt(limit),
+        where: {},
+    };
+    // Add filters conditionally
+    if (city) query.where.city = { [Op.iLike]: `%${city}%` }; // Case-insensitive filter
+    if (country) query.where.country = { [Op.iLike]: `%${country}%` };
+    if (propertyType) query.where.propertyType = { [Op.iLike]: `%${propertyType}%` };
+    if (bedrooms) query.where.bedrooms = bedrooms;
+    if (bathrooms) query.where.bathrooms = bathrooms;
+    if (minPrice || maxPrice) {
+        query.where.price = {};
+        if (minPrice) query.where.price[Op.gte] = minPrice; // Minimum price
+        if (maxPrice) query.where.price[Op.lte] = maxPrice; // Maximum price
+    }
+    // Filter based on amenities being true
+    if (Object.keys(amenities).length > 0) {
+        const amenityFilter = {};
+        // Loop through amenities and only include those that are 'true'
+        Object.keys(amenities).forEach(amenity => {
+            if (amenities[amenity] === 'true') {
+                amenityFilter[amenity] = true;
+            }
+        });
+
+        // Only add the filter if there are true amenities
+        if (Object.keys(amenityFilter).length > 0) {
+            query.where.amenities = {
+                [Op.contains]: amenityFilter // Filter JSONB column to match true amenities
+            };
+        }
+    }
+
+
+    // Fetch properties based on constructed query
+    const properties = await property.findAll(query);
+
+
+
+
+    // Construct the image URLs for each property
+    const propertiesWithImages = properties.map(property => {
+        const images = [];
+
+        // Loop through the stored image names for this property
+        if (property.propertyImage && property.propertyImage.length > 0) {
+            property.propertyImage.forEach(imageName => {
+                // Construct the image URL based on property ID and image name
+                const imageUrl = `${process.env.LOCAL_API}/uploads/${property.id}/${imageName}`;
+                images.push(imageUrl);
+            });
+        }
+
+        return {
+            ...property.toJSON(),
+            images, // Add images URLs to the property object
+        };
+    });
+
+    return resp.json({
+        status: 'success',
+        data: propertiesWithImages,
+        pagination: {
+            totalItems: properties.count,
+            totalPages: Math.ceil(properties.count / limit),
+            currentPage: parseInt(page),
+            pageSize: parseInt(limit),
+        },
+
+    });
+
+});
 
 const getPropertyById = catchAsync(async (req, resp, next) => {
     const propertyId = req.params.id;
@@ -221,4 +299,4 @@ const deleteProperty = catchAsync(async (req, resp, next) => {
     });
 
 })
-module.exports = { createProperty, getAllProperties, getPropertyById, updateProperty, deleteProperty };
+module.exports = { createProperty, getAllProperties, getPropertyById, updateProperty, deleteProperty,getFilteredProperties };
