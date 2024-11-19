@@ -150,7 +150,7 @@ const getAllProperties = catchAsync(async (req, resp, next) => {
 
 const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // const userId = req.user.id;
-    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
+    const { city, country, propertyType, category, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
 
     const query = {
         include: user,
@@ -161,7 +161,22 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // Add filters conditionally
     if (city) query.where.city = { [Op.iLike]: `%${city}%` }; // Case-insensitive filter
     if (country) query.where.country = { [Op.iLike]: `%${country}%` };
-    if (propertyType) query.where.propertyType = { [Op.iLike]: `%${propertyType}%` };
+    if (propertyType && Array.isArray(propertyType)) {
+        query.where[Op.and] = propertyType.map(pt => ({
+            propertyType: pt
+        }));
+      } else if (propertyType) {
+        query.where.propertyType = propertyType; // Direct comparison for single category
+      }
+      
+    if (category && Array.isArray(category)) {
+        query.where[Op.and] = category.map(cat => ({
+          category: cat
+        }));
+      } else if (category) {
+        query.where.category = category; // Direct comparison for single category
+      }
+    
     if (bedrooms) query.where.bedrooms = bedrooms;
     if (bathrooms) query.where.bathrooms = bathrooms;
     if (minPrice || maxPrice) {
@@ -299,4 +314,4 @@ const deleteProperty = catchAsync(async (req, resp, next) => {
     });
 
 })
-module.exports = { createProperty, getAllProperties, getPropertyById, updateProperty, deleteProperty,getFilteredProperties };
+module.exports = { createProperty, getAllProperties, getPropertyById, updateProperty, deleteProperty, getFilteredProperties };
