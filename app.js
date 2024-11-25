@@ -31,6 +31,7 @@ app.use(cors({
 app.use('/api/v1/auth',authRouter);
 app.use('/api/v1/projects',projectRouter )
 app.use('/api/v1/property',propertyRoute )
+app.use('/api/v1/filteredProperty',propertyRoute )
 
 // Serve static files from the 'uploads' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

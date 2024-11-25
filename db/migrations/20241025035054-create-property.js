@@ -78,15 +78,9 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      propertyTypeId: {
-        type: Sequelize.INTEGER,
+      propertyType: {
+        type: Sequelize.ENUM('HOUSE', 'APARTMENT', 'COMMERCIAL'),
         allowNull: false,
-        references: {
-          model: 'propertyType',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
       },
       contactInfo: {
         type: Sequelize.JSONB,
