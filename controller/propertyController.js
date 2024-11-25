@@ -90,6 +90,7 @@ const getAllProperties = catchAsync(async (req, resp, next) => {
         if (minPrice) query.where.price[Op.gte] = minPrice; // Minimum price
         if (maxPrice) query.where.price[Op.lte] = maxPrice; // Maximum price
     }
+
     // Filter based on amenities being true
     if (Object.keys(amenities).length > 0) {
         const amenityFilter = {};
@@ -150,7 +151,9 @@ const getAllProperties = catchAsync(async (req, resp, next) => {
 
 const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // const userId = req.user.id;
-    const { city, country, propertyType, category, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
+    const { city, country, propertyType, category, minPrice,
+         minArea, maxArea,
+         maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
 
     const query = {
         include: user,
@@ -180,10 +183,17 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
     if (bedrooms) query.where.bedrooms = bedrooms;
     if (bathrooms) query.where.bathrooms = bathrooms;
     if (minPrice || maxPrice) {
-        query.where.price = {};
-        if (minPrice) query.where.price[Op.gte] = minPrice; // Minimum price
-        if (maxPrice) query.where.price[Op.lte] = maxPrice; // Maximum price
+        query.where.priceAmountPerAnnum = {}; // Initialize priceAmountPerAnnum as an object
+        if (minPrice) query.where.priceAmountPerAnnum[Op.gte] = minPrice; // Minimum price
+        if (maxPrice) query.where.priceAmountPerAnnum[Op.lte] = maxPrice; // Maximum price
     }
+    if (minArea || maxArea) {
+        query.where.totalAreaInMeterSq = {}; // Initialize priceAmountPerAnnum as an object
+        if (minArea) query.where.totalAreaInMeterSq[Op.gte] = minArea; // Minimum price
+        if (maxArea) query.where.totalAreaInMeterSq[Op.lte] = maxArea; // Maximum price
+    }
+
+
     // Filter based on amenities being true
     if (Object.keys(amenities).length > 0) {
         const amenityFilter = {};
@@ -193,14 +203,13 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
                 amenityFilter[amenity] = true;
             }
         });
-
         // Only add the filter if there are true amenities
         if (Object.keys(amenityFilter).length > 0) {
             query.where.amenities = {
                 [Op.contains]: amenityFilter // Filter JSONB column to match true amenities
             };
         }
-    }
+    }           
 
 
     // Fetch properties based on constructed query
