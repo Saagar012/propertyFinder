@@ -2,86 +2,95 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('property', 'category', {
-      type: Sequelize.ENUM('RENT', 'SALE'),
-      allowNull: false,
-      defaultValue:'SALE',
-      validate: {
-        notNull: { msg: 'Category cannot be null' },
-      },
-    });
+    // await queryInterface.addColumn('property', 'category', {
+    //   type: Sequelize.ENUM('RENT', 'SALE'),
+    //   allowNull: false,
+    //   defaultValue:'SALE',
+    //   validate: {
+    //     notNull: { msg: 'Category cannot be null' },
+    //   },
+    // });
 
-    await queryInterface.addColumn('property', 'country', {
-      type: Sequelize.STRING,
-      allowNull: true,
-    });
+    // await queryInterface.addColumn('property', 'country', {
+    //   type: Sequelize.STRING,
+    //   allowNull: true,
+    // });
 
-    await queryInterface.addColumn('property', 'city', {
-      type: Sequelize.STRING,
+    // await queryInterface.addColumn('property', 'city', {
+    //   type: Sequelize.STRING,
     
-      allowNull: true,
-    });
+    //   allowNull: true,
+    // });
 
-    await queryInterface.addColumn('property', 'zipCode', {
-      type: Sequelize.STRING,
-      allowNull: true,
-    });
+    // await queryInterface.addColumn('property', 'zipCode', {
+    //   type: Sequelize.STRING,
+    //   allowNull: true,
+    // });
 
-    await queryInterface.addColumn('property', 'streetAddress', {
-      type: Sequelize.STRING,
-      allowNull: true,
-    });
+    // await queryInterface.addColumn('property', 'streetAddress', {
+    //   type: Sequelize.STRING,
+    //   allowNull: true,
+    // });
 
-    await queryInterface.addColumn('property', 'bedrooms', {
-      type: Sequelize.INTEGER,
-    });
+    // await queryInterface.addColumn('property', 'bedrooms', {
+    //   type: Sequelize.INTEGER,
+    // });
 
-    await queryInterface.addColumn('property', 'bathrooms', {
-      type: Sequelize.INTEGER,
-    });
+    // await queryInterface.addColumn('property', 'bathrooms', {
+    //   type: Sequelize.INTEGER,
+    // });
 
-    await queryInterface.addColumn('property', 'parkingSpots', {
-      type: Sequelize.INTEGER,
-    });
-    await queryInterface.addColumn('property', 'propertyType', {
-      type: Sequelize.ENUM('HOUSE', 'APARTMENT','COMMERCIAL'),
+    // await queryInterface.addColumn('property', 'parkingSpots', {
+    //   type: Sequelize.INTEGER,
+    // });
+    // await queryInterface.addColumn('property', 'propertyType', {
+    //   type: Sequelize.ENUM('HOUSE', 'APARTMENT','COMMERCIAL'),
+    //   allowNull: false,
+    //   defaultValue:'HOUSE',
+    //   validate: {
+    //     notNull: { msg: 'Property Type cannot be null' },
+    //   },
+    // });
+    await queryInterface.addColumn('property', 'status', {
+      type: Sequelize.ENUM('PENDING', 'VERIFIED','SOLD','EXPIRED'),
       allowNull: false,
-      defaultValue:'HOUSE',
+      defaultValue:'PENDING',
       validate: {
-        notNull: { msg: 'Property Type cannot be null' },
+        notNull: { msg: 'Property status cannot be null' },
       },
     });
-    await queryInterface.addColumn('property', 'amenities', {
-      type: Sequelize.JSONB,
-      allowNull: true,
-    });
+    // await queryInterface.addColumn('property', 'amenities', {
+    //   type: Sequelize.JSONB,
+    //   allowNull: true,
+    // });
 
-    await queryInterface.addColumn('property', 'contactInfo', {
-      type: Sequelize.JSONB,
-      allowNull: true,
-    });
+    // await queryInterface.addColumn('property', 'contactInfo', {
+    //   type: Sequelize.JSONB,
+    //   allowNull: true,
+    // });
 
-    await queryInterface.addColumn('property', 'priceAmountPerAnnum', {
-      type: Sequelize.DECIMAL,
-      allowNull: true,
-      validate: {
-        notNull: { msg: 'Price amount cannot be null' },
-        isDecimal: { msg: 'Price must be a decimal value' },
-      },
-    });
-    await queryInterface.addColumn('property', 'totalAreaInMeterSq', {
-      type: Sequelize.FLOAT,
-      allowNull: false,
-      defaultValue:0.0,
-      validate: {
-        notNull: { msg: 'Total area cannot be null' },
-        isFloat: { msg: 'Total area must be a numeric value' },
-        min:{msg: 'Total area must be greater than or equal to 0'}
-      },
-    });
+    // await queryInterface.addColumn('property', 'priceAmountPerAnnum', {
+    //   type: Sequelize.DECIMAL,
+    //   allowNull: true,
+    //   validate: {
+    //     notNull: { msg: 'Price amount cannot be null' },
+    //     isDecimal: { msg: 'Price must be a decimal value' },
+    //   },
+    // });
+    // await queryInterface.addColumn('property', 'totalAreaInMeterSq', {
+    //   type: Sequelize.FLOAT,
+    //   allowNull: false,
+    //   defaultValue:0.0,
+    //   validate: {
+    //     notNull: { msg: 'Total area cannot be null' },
+    //     isFloat: { msg: 'Total area must be a numeric value' },
+    //     min:{msg: 'Total area must be greater than or equal to 0'}
+    //   },
+    // });
   },
 
   async down(queryInterface, Sequelize) {
+    await queryInterface.removeColumn('property', 'status');
     // await queryInterface.removeColumn('property', 'category');
     // await queryInterface.removeColumn('property', 'country');
     // await queryInterface.removeColumn('property', 'city');

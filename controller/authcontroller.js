@@ -7,6 +7,7 @@ const user = require("../db/models/user");
 const jwt = require('jsonwebtoken');
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
+const { USER_TYPE } = require("../utils/staticData");
 
 
 const generateToken = (payload) =>{
@@ -16,7 +17,7 @@ const generateToken = (payload) =>{
 }
 const signup = catchAsync (async(req,res,next) => {
     const body = req.body;
-    if(!['1','2'].includes (body.userType))
+    if(![USER_TYPE.NORMAL_USER].includes (body.userType))
         throw new AppError('Invalid User Type', 400);
         const newUser = await user.create({
             userType: body.userType,
@@ -31,7 +32,6 @@ const signup = catchAsync (async(req,res,next) => {
     }
         // result
         const result = newUser.toJSON();
-        console.log("result", result);
         delete result.password;
         delete result.deletedAt;
 

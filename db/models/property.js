@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 const propertyType = require('./propertyType');
+const { PROPERTY_STATUS } = require('../../utils/staticData');
 
 const property = sequelize.define('property', {
     id: {
@@ -102,8 +103,11 @@ const property = sequelize.define('property', {
         },
       },
     status: {
-        type: DataTypes.ENUM('AVAILABLE', 'SOLD', 'RENTED', 'EXPIRED'),
-        defaultValue: 'AVAILABLE',
+        type: DataTypes.ENUM(PROPERTY_STATUS.PENDING_VERIFICATION,
+          PROPERTY_STATUS.VERIFIED ,
+          PROPERTY_STATUS.SOLD_OUT, 
+          PROPERTY_STATUS.EXPIRED),
+        defaultValue: PROPERTY_STATUS.PENDING_VERIFICATION,
     },
     userId: {
         type: DataTypes.INTEGER,

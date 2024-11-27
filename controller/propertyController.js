@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 
-const { PRICE_PERIODS } = require("../utils/staticData");
+const { PRICE_PERIODS, PROPERTY_STATUS } = require("../utils/staticData");
 const { Op } = require("sequelize");
 
 
@@ -39,7 +39,7 @@ const createProperty = catchAsync(async (req, resp, next) => {
         longitude: 0,
         propertyImage: images, // Array of image paths
         priceAmountPerAnnum: annualPrice, // Updated price field
-        status: body.status, // AVAILABLE, SOLD, etc.
+        status: PROPERTY_STATUS.PENDING_VERIFICATION, // AVAILABLE, SOLD, etc.
         propertyType: body.propertyType,
         userId: body.userId, // Creator’s user ID
         createdBy: userId, // Set the user who created it
@@ -68,7 +68,7 @@ const createProperty = catchAsync(async (req, resp, next) => {
 });
 
 
-const getAllProperties = catchAsync(async (req, resp, next) => {
+const getMyProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
     const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
 
@@ -108,14 +108,8 @@ const getAllProperties = catchAsync(async (req, resp, next) => {
             };
         }
     }
-
-
     // Fetch properties based on constructed query
     const properties = await property.findAll(query);
-
-
-
-
     // Construct the image URLs for each property
     const propertiesWithImages = properties.map(property => {
         const images = [];
@@ -152,14 +146,16 @@ const getAllProperties = catchAsync(async (req, resp, next) => {
 const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // const userId = req.user.id;
     const { city, country, propertyType, category, minPrice,
-         minArea, maxArea,
+         minArea, maxArea,topOffer,latestProperty,
          maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
 
     const query = {
         include: user,
         limit: parseInt(limit),
         offset: (parseInt(page) - 1) * parseInt(limit),
-        where: {},
+        where: {
+            status: PROPERTY_STATUS.VERIFIED
+        },
     };
     // Add filters conditionally
     if (city) query.where.city = { [Op.iLike]: `%${city}%` }; // Case-insensitive filter
@@ -210,13 +206,12 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
             };
         }
     }           
+    if (topOffer) query.order.push(['priceAmountPerAnnum', 'ASC']); 
+    if (latestProperty) query.order.push(['createdAt', 'DESC']); 
 
 
     // Fetch properties based on constructed query
     const properties = await property.findAll(query);
-
-
-
 
     // Construct the image URLs for each property
     const propertiesWithImages = properties.map(property => {
@@ -254,6 +249,46 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
 const getPropertyById = catchAsync(async (req, resp, next) => {
     const propertyId = req.params.id;
     const result = await property.findByPk(propertyId, { include: user });
+
+    if (!result) {
+        return next(new AppError('Invalid Property Id', 400))
+    }
+
+    // Initialize an array to store image URLs
+    const images = [];
+
+    // Construct the image URLs for this specific property
+    if (result.propertyImage && result.propertyImage.length > 0) {
+        result.propertyImage.forEach(imageName => {
+            // Construct the image URL based on the property ID and image name
+            const imageUrl = `${process.env.LOCAL_API}/uploads/${result.id}/${imageName}`;
+            images.push(imageUrl);
+        });
+    }
+
+    // Return the property details along with the image URLs
+    return resp.json({
+        status: 'success',
+        data: {
+            ...result.dataValues,  // Property data
+            images,  // Add the constructed image URLs
+        },
+    });
+});
+
+
+const getMyPropertyById = catchAsync(async (req, resp, next) => {
+    const userId = req.user.id;
+    const propertyId = req.params.id;
+
+    const query = {
+        where: {
+          id: propertyId,       
+          createdBy: userId     
+        },
+        include: [user] 
+      };
+      const result = await property.findOne(query);
 
     if (!result) {
         return next(new AppError('Invalid Property Id', 400))
@@ -323,4 +358,4 @@ const deleteProperty = catchAsync(async (req, resp, next) => {
     });
 
 })
-module.exports = { createProperty, getAllProperties, getPropertyById, updateProperty, deleteProperty, getFilteredProperties };
+module.exports = { createProperty, getMyProperties,getMyPropertyById, getPropertyById, updateProperty, deleteProperty, getFilteredProperties };
