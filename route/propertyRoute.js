@@ -18,7 +18,7 @@ router.route('/')
 
 
 router.route('/:id').get(getPropertyById)
-router.route('/:id').get(authentication,restrictTo(USER_TYPE.NORMAL_USER),getMyPropertyById)
+router.route('/details/:id').get(authentication,restrictTo(USER_TYPE.NORMAL_USER),getMyPropertyById)
 router.route('/:id').put(authentication,restrictTo(USER_TYPE.NORMAL_USER),updateProperty)
 router.route('/:id').delete(authentication,restrictTo(USER_TYPE.NORMAL_USER),deleteProperty)
 

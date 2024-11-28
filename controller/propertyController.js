@@ -14,7 +14,7 @@ const { Op } = require("sequelize");
 const createProperty = catchAsync(async (req, resp, next) => {
     const body = JSON.parse(req.body.data);
 
-    const userId = req.user.id;
+    const userId = req.user.id; 
 
     const images = req.files.map((file) => file.filename);
 
@@ -206,8 +206,10 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
             };
         }
     }           
-    if (topOffer) query.order.push(['priceAmountPerAnnum', 'ASC']); 
-    if (latestProperty) query.order.push(['createdAt', 'DESC']); 
+    if (topOffer)  query.order = [['priceAmountPerAnnum', 'ASC']]; // Sort by price in ascending order
+    
+    if (latestProperty) query.order = [['createdAt', 'DESC']]; // Sort by latest property
+
 
 
     // Fetch properties based on constructed query
@@ -283,12 +285,12 @@ const getMyPropertyById = catchAsync(async (req, resp, next) => {
 
     const query = {
         where: {
-          id: propertyId,       
           createdBy: userId     
         },
         include: [user] 
       };
-      const result = await property.findOne(query);
+      const result = await property.findByPk(propertyId, { query });
+
 
     if (!result) {
         return next(new AppError('Invalid Property Id', 400))
