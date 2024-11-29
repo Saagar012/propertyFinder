@@ -2,21 +2,26 @@ const express = require('express');
 const { authentication, restrictTo } = require('../controller/authcontroller');
 const upload = require('../utils/upload'); 
 
-const { createProperty, getAllProperties,getFilteredProperties, getPropertyById, updateProperty, deleteProperty } = require('../controller/propertyController');
+const { createProperty,getFilteredProperties, getPropertyById, updateProperty, deleteProperty, getMyProperties, getMyPropertyById, approxMortgagePrice } = require('../controller/propertyController');
+const { USER_TYPE } = require('../utils/staticData');
 const router = express.Router();
 
 
-router.route('/')
-    .get(getFilteredProperties);
+router.route('/filtered')
+    .get(getFilteredProperties)
+router.route('/approx-mortgage-price')
+    .post(approxMortgagePrice)
 
 router.route('/')
-    .post(authentication, restrictTo('1'),   upload.array('images', 5), createProperty)
-    .get(authentication, restrictTo('1'), getAllProperties);
+    .post(authentication, restrictTo(USER_TYPE.NORMAL_USER),upload.array('images', 5), createProperty)
+    .get(authentication, restrictTo(USER_TYPE.NORMAL_USER), getMyProperties)
 
 
-router.route('/:id').get(authentication,restrictTo('1'),getPropertyById)
-router.route('/:id').put(authentication,restrictTo('1'),updateProperty)
-router.route('/:id').delete(authentication,restrictTo('1'),deleteProperty)
+
+router.route('/:id').get(getPropertyById)
+router.route('/details/:id').get(authentication,restrictTo(USER_TYPE.NORMAL_USER),getMyPropertyById)
+router.route('/:id').put(authentication,restrictTo(USER_TYPE.NORMAL_USER),updateProperty)
+router.route('/:id').delete(authentication,restrictTo(USER_TYPE.NORMAL_USER),deleteProperty)
 
 
 

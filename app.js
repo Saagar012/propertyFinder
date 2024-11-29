@@ -5,6 +5,8 @@ const app = express();
 const authRouter = require('./route/authRoute');
 const propertyRoute = require('./route/propertyRoute');
 const projectRouter = require('./route/projectRoute');
+const emailRoute = require('./route/emailRoute');
+
 const path = require('path');
 
 const catchAsync = require('./utils/catchAsync');
@@ -31,7 +33,7 @@ app.use(cors({
 app.use('/api/v1/auth',authRouter);
 app.use('/api/v1/projects',projectRouter )
 app.use('/api/v1/property',propertyRoute )
-app.use('/api/v1/filteredProperty',propertyRoute )
+app.use('/api/v1/propertyRequest',emailRoute)
 
 // Serve static files from the 'uploads' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

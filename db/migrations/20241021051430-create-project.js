@@ -22,7 +22,7 @@ module.exports = {
         type: Sequelize.ARRAY(Sequelize.STRING),
         allowNull: false,
       },
-      price: {
+      totalPrice: {
         type: Sequelize.DECIMAL,
         allowNull: false,
       },

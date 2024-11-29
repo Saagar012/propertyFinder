@@ -3,6 +3,19 @@ const PRICE_PERIODS = {
     ANNUALLY: 'ANNUALLY',
   };
 
-  
-  module.exports = { PRICE_PERIODS};
+  const USER_TYPE = {
+    ADMIN: '0',
+    NORMAL_USER: '1',
+    AGENTS: '2',
+  };
+  const PROPERTY_STATUS = {
+    PENDING_VERIFICATION: 'PENDING',
+    VERIFIED: 'VERIFIED',
+    SOLD_OUT: 'SOLD',
+    EXPIRED: 'EXPIRED',
+
+  };
+
+
+  module.exports = { PRICE_PERIODS, USER_TYPE,PROPERTY_STATUS};
     
