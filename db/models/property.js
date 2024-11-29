@@ -94,7 +94,7 @@ const property = sequelize.define('property', {
             },
         },
     },
-    priceAmountPerAnnum: {
+    totalPrice: {
         type: DataTypes.DECIMAL,
         allowNull: false,
         validate: {

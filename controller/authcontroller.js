@@ -61,7 +61,8 @@ const login = catchAsync(async (req,res,next) => {
     return res.json({
         status: 'success',
         user: {
-            firstName: result.firstName
+            firstName: result.firstName,
+            email:result.email
         },
         token,
     })

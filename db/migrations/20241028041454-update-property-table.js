@@ -69,7 +69,7 @@ module.exports = {
     //   allowNull: true,
     // });
 
-    // await queryInterface.addColumn('property', 'priceAmountPerAnnum', {
+    // await queryInterface.addColumn('property', 'totalPrice', {
     //   type: Sequelize.DECIMAL,
     //   allowNull: true,
     //   validate: {
@@ -101,7 +101,7 @@ module.exports = {
     // await queryInterface.removeColumn('property', 'parkingSpots');
     // await queryInterface.removeColumn('property', 'amenities');
     // await queryInterface.removeColumn('property', 'contactInfo');
-    // await queryInterface.removeColumn('property', 'priceAmountPerAnnum');
+    // await queryInterface.removeColumn('property', 'totalPrice');
     // await queryInterface.removeColumn('property', 'totalAreaInMeterSq');
     // await queryInterface.removeColumn('property', 'propertyType');
 

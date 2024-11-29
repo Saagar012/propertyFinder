@@ -2,14 +2,15 @@ const express = require('express');
 const { authentication, restrictTo } = require('../controller/authcontroller');
 const upload = require('../utils/upload'); 
 
-const { createProperty,getFilteredProperties, getPropertyById, updateProperty, deleteProperty, getMyProperties, getMyPropertyById } = require('../controller/propertyController');
+const { createProperty,getFilteredProperties, getPropertyById, updateProperty, deleteProperty, getMyProperties, getMyPropertyById, approxMortgagePrice } = require('../controller/propertyController');
 const { USER_TYPE } = require('../utils/staticData');
 const router = express.Router();
 
 
 router.route('/filtered')
     .get(getFilteredProperties)
-
+router.route('/approx-mortgage-price')
+    .post(approxMortgagePrice)
 
 router.route('/')
     .post(authentication, restrictTo(USER_TYPE.NORMAL_USER),upload.array('images', 5), createProperty)

@@ -18,10 +18,6 @@ const createProperty = catchAsync(async (req, resp, next) => {
 
     const images = req.files.map((file) => file.filename);
 
-    let annualPrice = body.price.amount;
-    if (body.price.timeDuration === PRICE_PERIODS.MONTHLY) {
-        annualPrice *= 12;
-    }
     const newProperty = await property.create({
         title: body.title,
         description: body.description,
@@ -38,7 +34,7 @@ const createProperty = catchAsync(async (req, resp, next) => {
         latitude: 0,
         longitude: 0,
         propertyImage: images, // Array of image paths
-        priceAmountPerAnnum: annualPrice, // Updated price field
+        totalPrice: body.amount, // Updated price field
         status: PROPERTY_STATUS.PENDING_VERIFICATION, // AVAILABLE, SOLD, etc.
         propertyType: body.propertyType,
         userId: body.userId, // Creator’s user ID
@@ -143,6 +139,73 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
 
 });
 
+// Endpoint to calculate approximate mortgage price
+const approxMortgagePrice = catchAsync(async (req, res, next) => {
+    try {
+      const { city, area, bedrooms, bathrooms } = req.body;
+  
+      // Validate input
+      if (!city || !area || !bedrooms || !bathrooms) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
+  
+      // Fetch relevant properties from the database
+      let properties = await property.findAll({
+        where: { city, bedrooms, bathrooms },
+        attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only the required fields
+      });
+  
+      if (properties.length === 0) {
+        console.log("insid ehte secojd loop");
+
+        // Calculate the bedroom range (one less and one more)
+        const minBedrooms = Math.max(bedrooms - 1, 1); // Prevent going below 1 bedroom
+        const maxBedrooms = bedrooms + 1;
+  
+        const minBathrooms = Math.max(bathrooms - 1, 1); // Prevent going below 1 bathroom
+        const maxBathrooms = bathrooms + 1;
+  
+        // Fetch properties with a broader range of bedrooms and bathrooms
+        properties = await property.findAll({
+          where: {
+            city,
+            bedrooms: { [Op.between]: [minBedrooms, maxBedrooms] },
+            bathrooms: { [Op.between]: [minBathrooms, maxBathrooms] },
+          },
+          attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only the required fields
+        });
+  
+        if (properties.length === 0) {
+            console.log("insid ehte tjird loop");
+
+          // No properties found even in the broader range
+          return res.status(404).json({ error: 'No properties found to calculate approximate price.' });
+        }
+      }
+
+      // Calculate average price per square foot/meter
+      const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0); // Convert to number
+      const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0); // Convert to number
+        
+      // Avoid division by zero
+      let avgPricePerUnit = 0;
+      if (totalArea > 0) {
+        avgPricePerUnit = totalPrice / totalArea;
+      }
+  
+      // Calculate approximate price for user's input
+      const approxPrice = avgPricePerUnit * area;
+  
+      res.json({
+        avgPricePerUnit: avgPricePerUnit.toFixed(2),
+        totalApproxCost: approxPrice.toFixed(2),
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+    
 const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // const userId = req.user.id;
     const { city, country, propertyType, category, minPrice,
@@ -179,12 +242,12 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
     if (bedrooms) query.where.bedrooms = bedrooms;
     if (bathrooms) query.where.bathrooms = bathrooms;
     if (minPrice || maxPrice) {
-        query.where.priceAmountPerAnnum = {}; // Initialize priceAmountPerAnnum as an object
-        if (minPrice) query.where.priceAmountPerAnnum[Op.gte] = minPrice; // Minimum price
-        if (maxPrice) query.where.priceAmountPerAnnum[Op.lte] = maxPrice; // Maximum price
+        query.where.totalPrice = {}; 
+        if (minPrice) query.where.totalPrice[Op.gte] = minPrice; // Minimum price
+        if (maxPrice) query.where.totalPrice[Op.lte] = maxPrice; // Maximum price
     }
     if (minArea || maxArea) {
-        query.where.totalAreaInMeterSq = {}; // Initialize priceAmountPerAnnum as an object
+        query.where.totalAreaInMeterSq = {}; 
         if (minArea) query.where.totalAreaInMeterSq[Op.gte] = minArea; // Minimum price
         if (maxArea) query.where.totalAreaInMeterSq[Op.lte] = maxArea; // Maximum price
     }
@@ -206,7 +269,7 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
             };
         }
     }           
-    if (topOffer)  query.order = [['priceAmountPerAnnum', 'ASC']]; // Sort by price in ascending order
+    if (topOffer)  query.order = [['totalPrice', 'ASC']]; // Sort by price in ascending order
     
     if (latestProperty) query.order = [['createdAt', 'DESC']]; // Sort by latest property
 
@@ -360,4 +423,4 @@ const deleteProperty = catchAsync(async (req, resp, next) => {
     });
 
 })
-module.exports = { createProperty, getMyProperties,getMyPropertyById, getPropertyById, updateProperty, deleteProperty, getFilteredProperties };
+module.exports = { createProperty, getMyProperties,getMyPropertyById, getPropertyById, updateProperty, deleteProperty, getFilteredProperties, approxMortgagePrice};
