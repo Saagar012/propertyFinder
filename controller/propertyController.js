@@ -76,7 +76,13 @@ const createProperty = catchAsync(async (req, resp, next) => {
 
 const getMyProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
-    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 9, ...amenities } = req.query;
+    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 6, ...amenities } = req.query;
+    // Query to get total count of all matching properties (without limit)
+    const totalPropertiesCount = await property.count({
+        where: {
+            createdBy: userId
+        },
+    });
 
     const query = {
         include: user,
@@ -142,7 +148,7 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
         data: propertiesWithImages,
         pagination: {
             totalItems: properties.length,
-            totalPages: Math.ceil(properties.length / limit),
+            totalPages: Math.ceil(totalPropertiesCount / limit),
             currentPage: parseInt(page),
             pageSize: parseInt(limit),
         },
@@ -234,13 +240,13 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
         minArea, maxArea, topOffer, latestProperty,
         maxPrice, bathrooms, bedrooms, page = 1, limit = 9, ...amenities } = req.query;
 
-        // Query to get total count of all matching properties (without limit)
-        const totalPropertiesCount = await property.count({
-            where: {
-                status: PROPERTY_STATUS.VERIFIED
-            },
-        });
-    
+    // Query to get total count of all matching properties (without limit)
+    const totalPropertiesCount = await property.count({
+        where: {
+            status: PROPERTY_STATUS.VERIFIED
+        },
+    });
+
 
     const query = {
         include: user,
