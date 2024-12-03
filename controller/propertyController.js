@@ -18,7 +18,6 @@ const createProperty = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
 
     const images = req.files.map((file) => file.filename);
-
     const newProperty = await property.create({
         title: body.title,
         description: body.description,
@@ -32,13 +31,13 @@ const createProperty = catchAsync(async (req, resp, next) => {
         parkingSpots: body.parkingSpots,
         totalAreaInMeterSq: body.totalArea,
         amenities: body.amenities, // JSON object
-        latitude: 0,
-        longitude: 0,
+        latitude: body.latitude,
+        longitude: body.longitude,
         propertyImage: images, // Array of image paths
         totalPrice: body.amount, // Updated price field
         status: PROPERTY_STATUS.PENDING_VERIFICATION, // AVAILABLE, SOLD, etc.
         propertyType: body.propertyType,
-        userId: body.userId, // Creator’s user ID
+        userId: userId, // Creator’s user ID
         createdBy: userId, // Set the user who created it
         contactInfo: body.contactInfo, // Contact details as JSON    
     });
@@ -49,19 +48,29 @@ const createProperty = catchAsync(async (req, resp, next) => {
     const finalDir = `uploads/${propertyId}`;
     fs.mkdirSync(finalDir, { recursive: true });
 
-    const imagePaths = [];
-    req.files.forEach((file) => {
-        console.log(file);
-        const finalPath = path.join(finalDir, file.filename);
-        fs.renameSync(file.path, finalPath); // Move file
-        imagePaths.push(finalPath);
-    });
-
-
-    return resp.status(201).json({
-        status: 'success',
-        message: 'Property created with images successfully',
-    });
+    const moveFiles = async () => {
+        await Promise.all(
+            req.files.map(async (file) => {
+                const finalPath = path.join(finalDir, file.filename);
+                await fs.promises.rename(file.path, finalPath); // Move file
+            })
+        );
+    };
+    
+    try {
+        await moveFiles();
+        return resp.status(201).json({
+            status: 'success',
+            message: 'Property created with images successfully',
+        });
+    } catch (error) {
+        console.error("Error moving files:", error);
+        return resp.status(500).json({
+            status: 'error',
+            message: 'Failed to move files',
+        });
+    }
+    
 });
 
 
@@ -105,6 +114,8 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
             };
         }
     }
+    query.order = [['createdAt', 'DESC']];
+
     // Fetch properties based on constructed query
     const properties = await property.findAll(query);
     // Construct the image URLs for each property
@@ -263,6 +274,7 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
         if (maxArea) query.where.totalAreaInMeterSq[Op.lte] = maxArea; // Maximum price
     }
 
+    query.order = [['createdAt', 'DESC']];
 
     // Filter based on amenities being true
     if (Object.keys(amenities).length > 0) {

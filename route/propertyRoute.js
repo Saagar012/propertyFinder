@@ -13,7 +13,7 @@ router.route('/approx-mortgage-price')
     .post(approxMortgagePrice)
 
 router.route('/')
-    .post(authentication, restrictTo(USER_TYPE.NORMAL_USER),upload.array('images', 5), createProperty)
+    .post(authentication, restrictTo(USER_TYPE.NORMAL_USER),upload.array('images', 8), createProperty)
     .get(authentication, restrictTo(USER_TYPE.NORMAL_USER), getMyProperties)
 
 
