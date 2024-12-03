@@ -8,16 +8,16 @@ const express = require('express');
 
 const { PRICE_PERIODS, PROPERTY_STATUS } = require("../utils/staticData");
 const { Op } = require("sequelize");
+const { error } = require("console");
 
 
 
 const createProperty = catchAsync(async (req, resp, next) => {
     const body = JSON.parse(req.body.data);
 
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
     const images = req.files.map((file) => file.filename);
-
     const newProperty = await property.create({
         title: body.title,
         description: body.description,
@@ -31,13 +31,13 @@ const createProperty = catchAsync(async (req, resp, next) => {
         parkingSpots: body.parkingSpots,
         totalAreaInMeterSq: body.totalArea,
         amenities: body.amenities, // JSON object
-        latitude: 0,
-        longitude: 0,
+        latitude: body.latitude,
+        longitude: body.longitude,
         propertyImage: images, // Array of image paths
         totalPrice: body.amount, // Updated price field
         status: PROPERTY_STATUS.PENDING_VERIFICATION, // AVAILABLE, SOLD, etc.
         propertyType: body.propertyType,
-        userId: body.userId, // Creator’s user ID
+        userId: userId, // Creator’s user ID
         createdBy: userId, // Set the user who created it
         contactInfo: body.contactInfo, // Contact details as JSON    
     });
@@ -48,25 +48,41 @@ const createProperty = catchAsync(async (req, resp, next) => {
     const finalDir = `uploads/${propertyId}`;
     fs.mkdirSync(finalDir, { recursive: true });
 
-    const imagePaths = [];
-    req.files.forEach((file) => {
-        console.log(file);
-        const finalPath = path.join(finalDir, file.filename);
-        fs.renameSync(file.path, finalPath); // Move file
-        imagePaths.push(finalPath);
-    });
+    const moveFiles = async () => {
+        await Promise.all(
+            req.files.map(async (file) => {
+                const finalPath = path.join(finalDir, file.filename);
+                await fs.promises.rename(file.path, finalPath); // Move file
+            })
+        );
+    };
 
+    try {
+        await moveFiles();
+        return resp.status(201).json({
+            status: 'success',
+            message: 'Property created with images successfully',
+        });
+    } catch (error) {
+        console.error("Error moving files:", error);
+        return resp.status(500).json({
+            status: 'error',
+            message: 'Failed to move files',
+        });
+    }
 
-    return resp.status(201).json({
-        status: 'success',
-        message: 'Property created with images successfully',
-    });
 });
 
 
 const getMyProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
-    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
+    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 6, ...amenities } = req.query;
+    // Query to get total count of all matching properties (without limit)
+    const totalPropertiesCount = await property.count({
+        where: {
+            createdBy: userId
+        },
+    });
 
     const query = {
         include: user,
@@ -104,6 +120,8 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
             };
         }
     }
+    query.order = [['createdAt', 'DESC']];
+
     // Fetch properties based on constructed query
     const properties = await property.findAll(query);
     // Construct the image URLs for each property
@@ -129,8 +147,8 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
         status: 'success',
         data: propertiesWithImages,
         pagination: {
-            totalItems: properties.count,
-            totalPages: Math.ceil(properties.count / limit),
+            totalItems: properties.length,
+            totalPages: Math.ceil(totalPropertiesCount / limit),
             currentPage: parseInt(page),
             pageSize: parseInt(limit),
         },
@@ -139,78 +157,96 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
 
 });
 
-// Endpoint to calculate approximate mortgage price
 const approxMortgagePrice = catchAsync(async (req, res, next) => {
     try {
-      const { city, area, bedrooms, bathrooms } = req.body;
-  
-      // Validate input
-      if (!city || !area || !bedrooms || !bathrooms) {
-        return res.status(400).json({ error: 'All fields are required' });
-      }
-  
-      // Fetch relevant properties from the database
-      let properties = await property.findAll({
-        where: { city, bedrooms, bathrooms },
-        attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only the required fields
-      });
-  
-      if (properties.length === 0) {
-        console.log("insid ehte secojd loop");
+        const { city, area, propertyType } = req.body;
 
-        // Calculate the bedroom range (one less and one more)
-        const minBedrooms = Math.max(bedrooms - 1, 1); // Prevent going below 1 bedroom
-        const maxBedrooms = bedrooms + 1;
-  
-        const minBathrooms = Math.max(bathrooms - 1, 1); // Prevent going below 1 bathroom
-        const maxBathrooms = bathrooms + 1;
-  
-        // Fetch properties with a broader range of bedrooms and bathrooms
-        properties = await property.findAll({
-          where: {
-            city,
-            bedrooms: { [Op.between]: [minBedrooms, maxBedrooms] },
-            bathrooms: { [Op.between]: [minBathrooms, maxBathrooms] },
-          },
-          attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only the required fields
-        });
-  
-        if (properties.length === 0) {
-            console.log("insid ehte tjird loop");
-
-          // No properties found even in the broader range
-          return res.status(404).json({ error: 'No properties found to calculate approximate price.' });
+        // Validate input
+        if (!city || !area || !propertyType) {
+            return res.status(400).json({ error: 'Location, area and property Type are required.' });
         }
-      }
 
-      // Calculate average price per square foot/meter
-      const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0); // Convert to number
-      const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0); // Convert to number
-        
-      // Avoid division by zero
-      let avgPricePerUnit = 0;
-      if (totalArea > 0) {
-        avgPricePerUnit = totalPrice / totalArea;
-      }
-  
-      // Calculate approximate price for user's input
-      const approxPrice = avgPricePerUnit * area;
-  
-      res.json({
-        avgPricePerUnit: avgPricePerUnit.toFixed(2),
-        totalApproxCost: approxPrice.toFixed(2),
-      });
+        // Step 1: Calculate area range (10% tolerance)
+        const areaTolerance = 0.1 * area; // 10% of the provided area
+        const minArea = area - areaTolerance;
+        const maxArea = area + areaTolerance;
+
+        // Step 2: Query database for properties within area range and location
+        let properties = await property.findAll({
+            where: {
+                city,
+                propertyType,
+                totalAreaInMeterSq: { [Op.between]: [minArea, maxArea] },
+            },
+            attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only required fields
+        });
+
+        if (properties.length > 0) {
+            // Step 3: Calculate approximate price from the fetched properties
+            const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
+            const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
+            const avgPricePerUnit = totalPrice / totalArea;
+            const approxPrice = avgPricePerUnit * area;
+
+            return res.json({
+                message: 'Approximate price calculated based on area range and location.',
+                avgPricePerUnit: avgPricePerUnit.toFixed(2),
+                totalApproxCost: approxPrice.toFixed(2),
+                propertiesUsed: properties.length,
+            });
+        }
+
+        // Step 4: Query database for properties based on location only
+        properties = await property.findAll({
+            where: { city, propertyType },
+            attributes: ['totalPrice', 'totalAreaInMeterSq'],
+        });
+
+        if (properties.length > 0) {
+            // Calculate approximate price from properties in the location
+            const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
+            const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
+            const avgPricePerUnit = totalPrice / totalArea;
+            const approxPrice = avgPricePerUnit * area;
+            // Calculate the average total area of the properties
+            const avgTotalArea = totalArea / properties.length;
+            // Check if the average total area is more than 50% greater or less than the provided area
+            if (avgTotalArea > area * 1.5 || avgTotalArea < area * 0.5) {
+                return res.status(404).json({
+                    error: 'No properties found in the specified location to calculate approximate price.',
+                });
+            }
+            return res.json({
+                message: 'Approximate price calculated based on location only.',
+                avgPricePerUnit: avgPricePerUnit.toFixed(2),
+                totalApproxCost: approxPrice.toFixed(2),
+                propertiesUsed: properties.length,
+            });
+        }
+
+        // Step 5: If no properties found in the location
+        return res.status(404).json({
+            error: 'No properties found in the specified location to calculate approximate price.',
+        });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-  });
-    
+});
+
 const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // const userId = req.user.id;
     const { city, country, propertyType, category, minPrice,
-         minArea, maxArea,topOffer,latestProperty,
-         maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
+        minArea, maxArea, topOffer, latestProperty,
+        maxPrice, bathrooms, bedrooms, page = 1, limit = 9, ...amenities } = req.query;
+
+    // Query to get total count of all matching properties (without limit)
+    const totalPropertiesCount = await property.count({
+        where: {
+            status: PROPERTY_STATUS.VERIFIED
+        },
+    });
+
 
     const query = {
         include: user,
@@ -227,31 +263,32 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
         query.where[Op.and] = propertyType.map(pt => ({
             propertyType: pt
         }));
-      } else if (propertyType) {
+    } else if (propertyType) {
         query.where.propertyType = propertyType; // Direct comparison for single category
-      }
-      
+    }
+
     if (category && Array.isArray(category)) {
         query.where[Op.and] = category.map(cat => ({
-          category: cat
+            category: cat
         }));
-      } else if (category) {
+    } else if (category) {
         query.where.category = category; // Direct comparison for single category
-      }
-    
+    }
+
     if (bedrooms) query.where.bedrooms = bedrooms;
     if (bathrooms) query.where.bathrooms = bathrooms;
     if (minPrice || maxPrice) {
-        query.where.totalPrice = {}; 
+        query.where.totalPrice = {};
         if (minPrice) query.where.totalPrice[Op.gte] = minPrice; // Minimum price
         if (maxPrice) query.where.totalPrice[Op.lte] = maxPrice; // Maximum price
     }
     if (minArea || maxArea) {
-        query.where.totalAreaInMeterSq = {}; 
+        query.where.totalAreaInMeterSq = {};
         if (minArea) query.where.totalAreaInMeterSq[Op.gte] = minArea; // Minimum price
         if (maxArea) query.where.totalAreaInMeterSq[Op.lte] = maxArea; // Maximum price
     }
 
+    query.order = [['createdAt', 'DESC']];
 
     // Filter based on amenities being true
     if (Object.keys(amenities).length > 0) {
@@ -268,9 +305,9 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
                 [Op.contains]: amenityFilter // Filter JSONB column to match true amenities
             };
         }
-    }           
-    if (topOffer)  query.order = [['totalPrice', 'ASC']]; // Sort by price in ascending order
-    
+    }
+    if (topOffer) query.order = [['totalPrice', 'ASC']]; // Sort by price in ascending order
+
     if (latestProperty) query.order = [['createdAt', 'DESC']]; // Sort by latest property
 
 
@@ -296,13 +333,12 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
             images, // Add images URLs to the property object
         };
     });
-
     return resp.json({
         status: 'success',
         data: propertiesWithImages,
         pagination: {
-            totalItems: properties.count,
-            totalPages: Math.ceil(properties.count / limit),
+            totalItems: properties.length,
+            totalPages: Math.ceil(totalPropertiesCount / limit),
             currentPage: parseInt(page),
             pageSize: parseInt(limit),
         },
@@ -348,11 +384,11 @@ const getMyPropertyById = catchAsync(async (req, resp, next) => {
 
     const query = {
         where: {
-          createdBy: userId     
+            createdBy: userId
         },
-        include: [user] 
-      };
-      const result = await property.findByPk(propertyId, { query });
+        include: [user]
+    };
+    const result = await property.findByPk(propertyId, { query });
 
 
     if (!result) {
@@ -423,4 +459,4 @@ const deleteProperty = catchAsync(async (req, resp, next) => {
     });
 
 })
-module.exports = { createProperty, getMyProperties,getMyPropertyById, getPropertyById, updateProperty, deleteProperty, getFilteredProperties, approxMortgagePrice};
+module.exports = { createProperty, getMyProperties, getMyPropertyById, getPropertyById, updateProperty, deleteProperty, getFilteredProperties, approxMortgagePrice };
