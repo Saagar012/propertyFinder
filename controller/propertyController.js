@@ -56,7 +56,7 @@ const createProperty = catchAsync(async (req, resp, next) => {
             })
         );
     };
-    
+
     try {
         await moveFiles();
         return resp.status(201).json({
@@ -70,13 +70,13 @@ const createProperty = catchAsync(async (req, resp, next) => {
             message: 'Failed to move files',
         });
     }
-    
+
 });
 
 
 const getMyProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
-    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
+    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 9, ...amenities } = req.query;
 
     const query = {
         include: user,
@@ -141,8 +141,8 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
         status: 'success',
         data: propertiesWithImages,
         pagination: {
-            totalItems: properties.count,
-            totalPages: Math.ceil(properties.count / limit),
+            totalItems: properties.length,
+            totalPages: Math.ceil(properties.length / limit),
             currentPage: parseInt(page),
             pageSize: parseInt(limit),
         },
@@ -232,7 +232,15 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // const userId = req.user.id;
     const { city, country, propertyType, category, minPrice,
         minArea, maxArea, topOffer, latestProperty,
-        maxPrice, bathrooms, bedrooms, page = 1, limit = 10, ...amenities } = req.query;
+        maxPrice, bathrooms, bedrooms, page = 1, limit = 9, ...amenities } = req.query;
+
+        // Query to get total count of all matching properties (without limit)
+        const totalPropertiesCount = await property.count({
+            where: {
+                status: PROPERTY_STATUS.VERIFIED
+            },
+        });
+    
 
     const query = {
         include: user,
@@ -319,13 +327,12 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
             images, // Add images URLs to the property object
         };
     });
-
     return resp.json({
         status: 'success',
         data: propertiesWithImages,
         pagination: {
-            totalItems: properties.count,
-            totalPages: Math.ceil(properties.count / limit),
+            totalItems: properties.length,
+            totalPages: Math.ceil(totalPropertiesCount / limit),
             currentPage: parseInt(page),
             pageSize: parseInt(limit),
         },
