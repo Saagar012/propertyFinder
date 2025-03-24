@@ -13,6 +13,9 @@ const PRICE_PERIODS = {
     VERIFIED: 'VERIFIED',
     SOLD_OUT: 'SOLD',
     EXPIRED: 'EXPIRED',
+    ALL: 'ALL',
+    REJECTED: 'REJECTED',
+
 
   };
 

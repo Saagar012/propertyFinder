@@ -65,7 +65,7 @@ module.exports = {
         allowNull: false,
       },
       status: {
-        type: Sequelize.ENUM('PENDING', 'VERIFIED', 'SOLD', 'EXPIRED'),
+        type: Sequelize.ENUM('PENDING', 'VERIFIED', 'SOLD', 'EXPIRED','REJECTED'),
         defaultValue: 'PENDING',
       },
       userId: {
