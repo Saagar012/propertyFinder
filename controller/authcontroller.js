@@ -15,6 +15,8 @@ const generateToken = (payload) =>{
         expiresIn: process.env.JWT_EXPIRES_IN,
     }) 
 }
+
+// sign up code for the backend
 const signup = catchAsync (async(req,res,next) => {
     const body = req.body;
     if(![USER_TYPE.NORMAL_USER].includes (body.userType))
@@ -45,6 +47,9 @@ const signup = catchAsync (async(req,res,next) => {
         data: result,
     });
 });
+
+
+// login code for the backend
 const login = catchAsync(async (req,res,next) => {
     const { email, password } = req.body;
     if(!email || !password){

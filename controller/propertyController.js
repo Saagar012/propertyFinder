@@ -5,10 +5,11 @@ const property = require("../db/models/property");
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const createNotificationService = require('../services/notification');
 
-const { PRICE_PERIODS, PROPERTY_STATUS } = require("../utils/staticData");
+const { PROPERTY_STATUS } = require("../utils/staticData");
 const { Op } = require("sequelize");
-const { error } = require("console");
+const { error, Console } = require("console");
 
 
 
@@ -59,6 +60,10 @@ const createProperty = catchAsync(async (req, resp, next) => {
 
     try {
         await moveFiles();
+        // Call the Notification Service
+        const message = `New property "${newProperty.title}" has been submitted for approval.`;
+        await createNotificationService({ userId, message });
+
         return resp.status(201).json({
             status: 'success',
             message: 'Property created with images successfully',
@@ -74,13 +79,17 @@ const createProperty = catchAsync(async (req, resp, next) => {
 });
 
 
+
+
 const getMyProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
-    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, page = 1, limit = 6, ...amenities } = req.query;
+    const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, status, page = 1, limit = 6, ...amenities } = req.query;
     // Query to get total count of all matching properties (without limit)
     const totalPropertiesCount = await property.count({
         where: {
-            createdBy: userId
+            createdBy: userId,
+            ...(status && status !== PROPERTY_STATUS.ALL && { status }) // Add the status filter conditionally
+
         },
     });
 
@@ -96,6 +105,7 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
     if (propertyType) query.where.propertyType = { [Op.iLike]: `%${propertyType}%` };
     if (bedrooms) query.where.bedrooms = bedrooms;
     if (bathrooms) query.where.bathrooms = bathrooms;
+    if (status && status !== PROPERTY_STATUS.ALL) query.where.status = status;  // Filter by status
 
     if (minPrice || maxPrice) {
         query.where.price = {};
@@ -423,6 +433,7 @@ const updateProperty = catchAsync(async (req, resp, next) => {
     const propertyId = req.params.id;
     const body = req.body;
     const result = await property.findByPk(propertyId);
+    
 
     if (!result) {
         return next(new AppError('Invalid property id'), 400);
@@ -459,4 +470,30 @@ const deleteProperty = catchAsync(async (req, resp, next) => {
     });
 
 })
-module.exports = { createProperty, getMyProperties, getMyPropertyById, getPropertyById, updateProperty, deleteProperty, getFilteredProperties, approxMortgagePrice };
+
+const approveRejectProperty = catchAsync(async (req, resp, next) => {
+    const propertyId = req.params.id;
+    const result = await property.findByPk(propertyId);
+
+    if (!result) {
+        return next(new AppError('Invalid property id'), 400);
+    }
+
+    const body = req.body;
+
+    console.log("body", body);
+
+    if(!result){
+        return next(new AppError('Invalid project id'), 400);
+    }
+    result.status = body.status;
+
+    await result.save();
+    return resp.json({
+        status: 'success',
+        message: 'Property status updated successfully',
+    });
+
+
+})
+module.exports = { createProperty, getMyProperties, getMyPropertyById, getPropertyById, updateProperty, deleteProperty, approveRejectProperty, getFilteredProperties, approxMortgagePrice };

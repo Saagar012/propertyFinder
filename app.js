@@ -6,6 +6,7 @@ const authRouter = require('./route/authRoute');
 const propertyRoute = require('./route/propertyRoute');
 const projectRouter = require('./route/projectRoute');
 const emailRoute = require('./route/emailRoute');
+const notificationRoute = require('./route/notificationRoute');
 
 const path = require('path');
 
@@ -16,7 +17,7 @@ const globalErrorHandler = require('./controller/errorController');
 app.use(express.json());
 
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: '*',
   methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE'], // Allow specific methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
 }));
@@ -33,7 +34,10 @@ app.use(cors({
 app.use('/api/v1/auth',authRouter);
 app.use('/api/v1/projects',projectRouter )
 app.use('/api/v1/property',propertyRoute )
+app.use('/api/v1/propertyStatus',propertyRoute )
+
 app.use('/api/v1/propertyRequest',emailRoute)
+app.use('/api/v1/notifications', notificationRoute )
 
 // Serve static files from the 'uploads' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

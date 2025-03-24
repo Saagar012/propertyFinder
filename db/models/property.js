@@ -106,6 +106,7 @@ const property = sequelize.define('property', {
         type: DataTypes.ENUM(PROPERTY_STATUS.PENDING_VERIFICATION,
           PROPERTY_STATUS.VERIFIED ,
           PROPERTY_STATUS.SOLD_OUT, 
+          PROPERTY_STATUS.REJECTED, 
           PROPERTY_STATUS.EXPIRED),
         defaultValue: PROPERTY_STATUS.PENDING_VERIFICATION,
     },
