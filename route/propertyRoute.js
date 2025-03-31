@@ -20,7 +20,7 @@ router.route('/')
 
 router.route('/:id').get(getPropertyById)
 router.route('/details/:id').get(authentication,restrictTo(USER_TYPE.NORMAL_USER),getMyPropertyById)
-router.route('/:id/update').post(updateProperty)
+router.route('/update/:id').post(authentication, upload.none(), updateProperty)
 router.route('/:id').delete(authentication,restrictTo(USER_TYPE.NORMAL_USER),deleteProperty)
 router.route('/:id/rejection-message').post(updateRejectionMessage)   
 router.route('/:id/approve-reject').post(approveRejectProperty)

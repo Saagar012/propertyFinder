@@ -85,14 +85,22 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
     const totalPropertiesCount = await property.count({
         where: {
             createdBy: userId,
-            ...(status && status !== PROPERTY_STATUS.ALL && { status }) // Add the status filter conditionally
+            ...(status && status !== PROPERTY_STATUS.ALL && { status }), // Apply status filter if not ALL
+            ...(status === PROPERTY_STATUS.ALL && { status: { [Op.ne]: PROPERTY_STATUS.REJECTED } }) // Exclude rejected properties when status is ALL
+
 
         },
     });
 
     const query = {
         include: user,
-        where: { createdBy: userId },
+        where: { 
+            createdBy: userId,
+            ...(status && status !== PROPERTY_STATUS.ALL && { status }), // Apply status filter if not ALL
+            ...(status === PROPERTY_STATUS.ALL && { status: { [Op.ne]: PROPERTY_STATUS.REJECTED } }) // Exclude rejected properties when status is ALL
+
+        
+        },
         limit: parseInt(limit),
         offset: (parseInt(page) - 1) * parseInt(limit),
     };
@@ -102,7 +110,7 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
     if (propertyType) query.where.propertyType = { [Op.iLike]: `%${propertyType}%` };
     if (bedrooms) query.where.bedrooms = bedrooms;
     if (bathrooms) query.where.bathrooms = bathrooms;
-    if (status && status !== PROPERTY_STATUS.ALL) query.where.status = status;  // Filter by status
+    // if (status && status !== PROPERTY_STATUS.ALL) query.where.status = status;  // Filter by status
 
     if (minPrice || maxPrice) {
         query.where.price = {};
@@ -428,7 +436,10 @@ const getMyPropertyById = catchAsync(async (req, resp, next) => {
 const updateProperty = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
     const propertyId = req.params.id;
-    const body = req.body;
+    if (!req.params.id) {
+        return next(new AppError('Property ID is missing', 400));
+    }
+    const body = JSON.parse(req.body.data); // Parse JSON string
     const result = await property.findByPk(propertyId);
     
 
@@ -439,15 +450,28 @@ const updateProperty = catchAsync(async (req, resp, next) => {
     result.location = body.location;
     result.latitude = body.latitude;
     result.description = body.description;
-    result.propertyImage = body.propertyImage;
-    result.propertyTypeId = body.propertyTypeId;
+    result.status = PROPERTY_STATUS.PENDING_VERIFICATION;
+    // result.propertyTypeId = body.propertyTypeId;
 
     const updatedResult = await result.save();
 
-    return resp.json({
-        status: 'success',
-        data: updatedResult,
-    });
+    try {
+        // Call the Notification Service
+        const message = `Existing property "${body.title}" has been submitted again for approval.`;
+        await createNotificationService({ userId, message });
+
+        return resp.status(201).json({
+            status: 'success',
+            data: updatedResult,
+            message: 'Property updated successfully',
+        });
+    } catch (error) {
+        console.error("Error updating the property:", error);
+        return resp.status(500).json({
+            status: 'error',
+            message: 'Failed to update the property',
+        });
+    }
 
 })
 
@@ -477,9 +501,6 @@ const approveRejectProperty = catchAsync(async (req, resp, next) => {
     }
 
     const body = req.body;
-
-    console.log("body", body);
-
     if(!result){
         return next(new AppError('Invalid project id'), 400);
     }
