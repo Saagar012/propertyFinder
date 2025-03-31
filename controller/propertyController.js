@@ -78,9 +78,6 @@ const createProperty = catchAsync(async (req, resp, next) => {
 
 });
 
-
-
-
 const getMyProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
     const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, status, page = 1, limit = 6, ...amenities } = req.query;
@@ -496,4 +493,26 @@ const approveRejectProperty = catchAsync(async (req, resp, next) => {
 
 
 })
-module.exports = { createProperty, getMyProperties, getMyPropertyById, getPropertyById, updateProperty, deleteProperty, approveRejectProperty, getFilteredProperties, approxMortgagePrice };
+const updateRejectionMessage = catchAsync(async (req, resp, next) => {
+    const propertyId = req.params.id;
+    const result = await property.findByPk(propertyId);
+
+    if (!result) {
+        return next(new AppError('Invalid property id'), 400);
+    }
+
+    const body = req.body;
+    if(!result){
+        return next(new AppError('Invalid project id'), 400);
+    }
+    result.rejectionMessage = body.rejectionMessage;
+
+    await result.save();
+    return resp.json({
+        status: 'success',
+        message: 'Property Rejection Message updated successfully',
+    });
+
+
+})
+module.exports = { createProperty, getMyProperties, getMyPropertyById, getPropertyById, updateProperty, deleteProperty, approveRejectProperty,updateRejectionMessage, getFilteredProperties, approxMortgagePrice };

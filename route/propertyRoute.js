@@ -2,7 +2,7 @@ const express = require('express');
 const { authentication, restrictTo } = require('../controller/authcontroller');
 const upload = require('../utils/upload'); 
 
-const { createProperty,getFilteredProperties, getPropertyById, updateProperty, deleteProperty, getMyProperties, getMyPropertyById, approxMortgagePrice, approveRejectProperty } = require('../controller/propertyController');
+const { createProperty,getFilteredProperties, getPropertyById, updateProperty, deleteProperty, getMyProperties, getMyPropertyById, approxMortgagePrice, approveRejectProperty, updateRejectionMessage } = require('../controller/propertyController');
 const { USER_TYPE } = require('../utils/staticData');
 const router = express.Router();
 
@@ -20,9 +20,10 @@ router.route('/')
 
 router.route('/:id').get(getPropertyById)
 router.route('/details/:id').get(authentication,restrictTo(USER_TYPE.NORMAL_USER),getMyPropertyById)
-router.route('/:id').put(authentication,restrictTo(USER_TYPE.NORMAL_USER),updateProperty)
+router.route('/:id/update').post(updateProperty)
 router.route('/:id').delete(authentication,restrictTo(USER_TYPE.NORMAL_USER),deleteProperty)
-router.route('/:id').post(approveRejectProperty)
+router.route('/:id/rejection-message').post(updateRejectionMessage)   
+router.route('/:id/approve-reject').post(approveRejectProperty)
 
 
 

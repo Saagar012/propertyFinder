@@ -124,6 +124,12 @@ const property = sequelize.define('property', {
         type: DataTypes.ENUM('HOUSE', 'COMMERCIAL', 'APARTMENT'),
         defaultValue: 'HOUSE',
     },
+    rejectionMessage: {
+      type: DataTypes.TEXT,  // Use TEXT if the rejection message can be long.
+      allowNull: true,       // Allow null value if there's no rejection message
+      defaultValue: null,    // Optional: set default value if you want
+  },
+  
     contactInfo: {
         type: DataTypes.JSONB, // Store contact information as a JSON object
         allowNull: false,

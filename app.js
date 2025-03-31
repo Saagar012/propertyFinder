@@ -34,7 +34,9 @@ app.use(cors({
 app.use('/api/v1/auth',authRouter);
 app.use('/api/v1/projects',projectRouter )
 app.use('/api/v1/property',propertyRoute )
-app.use('/api/v1/propertyStatus',propertyRoute )
+// app.use('/api/v1/propertyStatus',propertyRoute )
+// app.use('/api/v1/rejectionMessage',propertyRoute )
+// app.use('/api/v1/updateProperty',propertyRoute )
 
 app.use('/api/v1/propertyRequest',emailRoute)
 app.use('/api/v1/notifications', notificationRoute )
