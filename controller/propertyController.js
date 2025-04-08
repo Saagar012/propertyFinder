@@ -172,82 +172,124 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
 
 });
 
+// const approxMortgagePrice = catchAsync(async (req, res, next) => {
+//     try {
+//         const { city, area, propertyType } = req.body;
+
+//         // Validate input
+//         if (!city || !area || !propertyType) {
+//             return res.status(400).json({ error: 'Location, area and property Type are required.' });
+//         }
+
+//         // Step 1: Calculate area range (10% tolerance)
+//         const areaTolerance = 0.1 * area; // 10% of the provided area
+//         const minArea = area - areaTolerance;
+//         const maxArea = area + areaTolerance;
+
+//         // Step 2: Query database for properties within area range and location
+//         let properties = await property.findAll({
+//             where: {
+//                 city,
+//                 propertyType,
+//                 totalAreaInMeterSq: { [Op.between]: [minArea, maxArea] },
+//             },
+//             attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only required fields
+//         });
+
+//         if (properties.length > 0) {
+//             // Step 3: Calculate approximate price from the fetched properties
+//             const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
+//             const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
+//             const avgPricePerUnit = totalPrice / totalArea;
+//             const approxPrice = avgPricePerUnit * area;
+
+//             return res.json({
+//                 message: 'Approximate price calculated based on area range and location.',
+//                 avgPricePerUnit: avgPricePerUnit.toFixed(2),
+//                 totalApproxCost: approxPrice.toFixed(2),
+//                 propertiesUsed: properties.length,
+//             });
+//         }
+
+//         // Step 4: Query database for properties based on location only
+//         properties = await property.findAll({
+//             where: { city, propertyType },
+//             attributes: ['totalPrice', 'totalAreaInMeterSq'],
+//         });
+
+//         if (properties.length > 0) {
+//             // Calculate approximate price from properties in the location
+//             const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
+//             const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
+//             const avgPricePerUnit = totalPrice / totalArea;
+//             const approxPrice = avgPricePerUnit * area;
+//             // Calculate the average total area of the properties
+//             const avgTotalArea = totalArea / properties.length;
+//             // Check if the average total area is more than 50% greater or less than the provided area
+//             if (avgTotalArea > area * 1.5 || avgTotalArea < area * 0.5) {
+//                 return res.status(404).json({
+//                     error: 'No properties found in the specified location to calculate approximate price.',
+//                 });
+//             }
+//             return res.json({
+//                 message: 'Approximate price calculated based on location only.',
+//                 avgPricePerUnit: avgPricePerUnit.toFixed(2),
+//                 totalApproxCost: approxPrice.toFixed(2),
+//                 propertiesUsed: properties.length,
+//             });
+//         }
+
+//         // Step 5: If no properties found in the location
+//         return res.status(404).json({
+//             error: 'No properties found in the specified location to calculate approximate price.',
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal Server Error' });
+//     }
+// });
 const approxMortgagePrice = catchAsync(async (req, res, next) => {
-    try {
-        const { city, area, propertyType } = req.body;
+    try {  
+        const { propertyPrice, downPayment, interestRate, loanTerm, paymentFrequency } = req.body;
 
-        // Validate input
-        if (!city || !area || !propertyType) {
-            return res.status(400).json({ error: 'Location, area and property Type are required.' });
+        const loanAmount = propertyPrice - downPayment;
+        const annualInterestRate = interestRate / 100;
+
+        let monthlyPayment, annualPayment;
+
+        // Number of total monthly payments
+        const totalMonths = loanTerm * 12;
+        const monthlyInterestRate = annualInterestRate / 12;
+
+        if (monthlyInterestRate === 0) {
+            // If interest rate is 0%
+            monthlyPayment = loanAmount / totalMonths;
+        } else {
+            monthlyPayment = loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, totalMonths)) / (Math.pow(1 + monthlyInterestRate, totalMonths) - 1);
         }
 
-        // Step 1: Calculate area range (10% tolerance)
-        const areaTolerance = 0.1 * area; // 10% of the provided area
-        const minArea = area - areaTolerance;
-        const maxArea = area + areaTolerance;
-
-        // Step 2: Query database for properties within area range and location
-        let properties = await property.findAll({
-            where: {
-                city,
-                propertyType,
-                totalAreaInMeterSq: { [Op.between]: [minArea, maxArea] },
-            },
-            attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only required fields
-        });
-
-        if (properties.length > 0) {
-            // Step 3: Calculate approximate price from the fetched properties
-            const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
-            const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
-            const avgPricePerUnit = totalPrice / totalArea;
-            const approxPrice = avgPricePerUnit * area;
-
-            return res.json({
-                message: 'Approximate price calculated based on area range and location.',
-                avgPricePerUnit: avgPricePerUnit.toFixed(2),
-                totalApproxCost: approxPrice.toFixed(2),
-                propertiesUsed: properties.length,
-            });
+        if (paymentFrequency === "MONTHLY") {
+            annualPayment = monthlyPayment * 12;
+        } else if (paymentFrequency === "WEEKLY") {
+            // Convert monthly to weekly approximation (monthly * 12 / 52)
+            annualPayment = monthlyPayment * 12;
+            monthlyPayment = annualPayment / 52; // Weekly payment
+        } else {
+            return res.status(400).json({ error: 'Invalid payment frequency' });
         }
 
-        // Step 4: Query database for properties based on location only
-        properties = await property.findAll({
-            where: { city, propertyType },
-            attributes: ['totalPrice', 'totalAreaInMeterSq'],
+        res.status(200).json({
+            loanAmount: loanAmount.toFixed(2),
+            monthlyPayment: monthlyPayment.toFixed(2),
+            annualPayment: annualPayment.toFixed(2),
         });
 
-        if (properties.length > 0) {
-            // Calculate approximate price from properties in the location
-            const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
-            const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
-            const avgPricePerUnit = totalPrice / totalArea;
-            const approxPrice = avgPricePerUnit * area;
-            // Calculate the average total area of the properties
-            const avgTotalArea = totalArea / properties.length;
-            // Check if the average total area is more than 50% greater or less than the provided area
-            if (avgTotalArea > area * 1.5 || avgTotalArea < area * 0.5) {
-                return res.status(404).json({
-                    error: 'No properties found in the specified location to calculate approximate price.',
-                });
-            }
-            return res.json({
-                message: 'Approximate price calculated based on location only.',
-                avgPricePerUnit: avgPricePerUnit.toFixed(2),
-                totalApproxCost: approxPrice.toFixed(2),
-                propertiesUsed: properties.length,
-            });
-        }
-
-        // Step 5: If no properties found in the location
-        return res.status(404).json({
-            error: 'No properties found in the specified location to calculate approximate price.',
-        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 const getFilteredProperties = catchAsync(async (req, resp, next) => {
     // const userId = req.user.id;

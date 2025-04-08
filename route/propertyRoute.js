@@ -4,6 +4,7 @@ const upload = require('../utils/upload');
 
 const { createProperty,getFilteredProperties, getPropertyById, updateProperty, deleteProperty, getMyProperties, getMyPropertyById, approxMortgagePrice, approveRejectProperty, updateRejectionMessage } = require('../controller/propertyController');
 const { USER_TYPE } = require('../utils/staticData');
+const { countUnreadNotifications } = require('../controller/notificationcontroller');
 const router = express.Router();
 
 
@@ -24,7 +25,5 @@ router.route('/update/:id').post(authentication, upload.none(), updateProperty)
 router.route('/:id').delete(authentication,restrictTo(USER_TYPE.NORMAL_USER),deleteProperty)
 router.route('/:id/rejection-message').post(updateRejectionMessage)   
 router.route('/:id/approve-reject').post(approveRejectProperty)
-
-
 
 module.exports = router;    

@@ -16,6 +16,8 @@ const getAllNotifications = catchAsync(async (req, resp, next) => {
 
 
 const countUnreadNotifications = catchAsync(async (req, resp, next) => {
+    console.log("this count api is hit");
+
     const unreadCount = await notification.count({
         where: {
             is_read: false // Assuming `is_read` is a boolean field
@@ -26,6 +28,20 @@ const countUnreadNotifications = catchAsync(async (req, resp, next) => {
         status: 'success',
         count: unreadCount,
     });
+    
 });
 
-module.exports = { getAllNotifications, countUnreadNotifications };
+
+
+const updateUnreadNotificationsCount = catchAsync(async (req, resp, next) => {
+    await notification.update(
+        { is_read: true },
+        { where: { is_read: false } }
+    );
+    return resp.json({
+        status: 'success',
+        message: 'All unread notifications marked as read'
+    });
+});
+
+module.exports = { getAllNotifications, countUnreadNotifications , updateUnreadNotificationsCount};
