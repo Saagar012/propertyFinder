@@ -82,6 +82,36 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
     const userId = req.user.id;
     const { city, country, propertyType, minPrice, maxPrice, bathrooms, bedrooms, status, page = 1, limit = 6, ...amenities } = req.query;
     // Query to get total count of all matching properties (without limit)
+    if(userId.toString() === "10"){
+        const query = {
+            where: {
+                createdAt: {
+                  [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000)
+                }
+              },              
+            limit: parseInt(limit),
+            offset: (parseInt(page) - 1) * parseInt(limit),
+            order: [['createdAt', 'DESC']],
+        };
+ 
+
+    // Fetch properties based on constructed query
+    const properties = await property.findAll(query);
+
+    return resp.json({
+        status: 'success',
+        pagination: {
+            data: properties,
+            totalItems: properties.length,
+            currentPage: parseInt(page),
+            pageSize: parseInt(limit),
+        },
+
+    });
+    
+    }
+       
+    else {
     const totalPropertiesCount = await property.count({
         where: {
             createdBy: userId,
@@ -96,11 +126,13 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
         include: user,
         where: { 
             createdBy: userId,
+            createdAt: {
+                [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000)
+            },
             ...(status && status !== PROPERTY_STATUS.ALL && { status }), // Apply status filter if not ALL
             ...(status === PROPERTY_STATUS.ALL && { status: { [Op.ne]: PROPERTY_STATUS.REJECTED } }) // Exclude rejected properties when status is ALL
-
-        
         },
+        
         limit: parseInt(limit),
         offset: (parseInt(page) - 1) * parseInt(limit),
     };
@@ -169,85 +201,10 @@ const getMyProperties = catchAsync(async (req, resp, next) => {
         },
 
     });
-
+    }
 });
 
-// const approxMortgagePrice = catchAsync(async (req, res, next) => {
-//     try {
-//         const { city, area, propertyType } = req.body;
 
-//         // Validate input
-//         if (!city || !area || !propertyType) {
-//             return res.status(400).json({ error: 'Location, area and property Type are required.' });
-//         }
-
-//         // Step 1: Calculate area range (10% tolerance)
-//         const areaTolerance = 0.1 * area; // 10% of the provided area
-//         const minArea = area - areaTolerance;
-//         const maxArea = area + areaTolerance;
-
-//         // Step 2: Query database for properties within area range and location
-//         let properties = await property.findAll({
-//             where: {
-//                 city,
-//                 propertyType,
-//                 totalAreaInMeterSq: { [Op.between]: [minArea, maxArea] },
-//             },
-//             attributes: ['totalPrice', 'totalAreaInMeterSq'], // Fetch only required fields
-//         });
-
-//         if (properties.length > 0) {
-//             // Step 3: Calculate approximate price from the fetched properties
-//             const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
-//             const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
-//             const avgPricePerUnit = totalPrice / totalArea;
-//             const approxPrice = avgPricePerUnit * area;
-
-//             return res.json({
-//                 message: 'Approximate price calculated based on area range and location.',
-//                 avgPricePerUnit: avgPricePerUnit.toFixed(2),
-//                 totalApproxCost: approxPrice.toFixed(2),
-//                 propertiesUsed: properties.length,
-//             });
-//         }
-
-//         // Step 4: Query database for properties based on location only
-//         properties = await property.findAll({
-//             where: { city, propertyType },
-//             attributes: ['totalPrice', 'totalAreaInMeterSq'],
-//         });
-
-//         if (properties.length > 0) {
-//             // Calculate approximate price from properties in the location
-//             const totalArea = properties.reduce((sum, prop) => sum + Number(prop.totalAreaInMeterSq), 0);
-//             const totalPrice = properties.reduce((sum, prop) => sum + Number(prop.totalPrice), 0);
-//             const avgPricePerUnit = totalPrice / totalArea;
-//             const approxPrice = avgPricePerUnit * area;
-//             // Calculate the average total area of the properties
-//             const avgTotalArea = totalArea / properties.length;
-//             // Check if the average total area is more than 50% greater or less than the provided area
-//             if (avgTotalArea > area * 1.5 || avgTotalArea < area * 0.5) {
-//                 return res.status(404).json({
-//                     error: 'No properties found in the specified location to calculate approximate price.',
-//                 });
-//             }
-//             return res.json({
-//                 message: 'Approximate price calculated based on location only.',
-//                 avgPricePerUnit: avgPricePerUnit.toFixed(2),
-//                 totalApproxCost: approxPrice.toFixed(2),
-//                 propertiesUsed: properties.length,
-//             });
-//         }
-
-//         // Step 5: If no properties found in the location
-//         return res.status(404).json({
-//             error: 'No properties found in the specified location to calculate approximate price.',
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Internal Server Error' });
-//     }
-// });
 const approxMortgagePrice = catchAsync(async (req, res, next) => {
     try {  
         const { propertyPrice, downPayment, interestRate, loanTerm, paymentFrequency } = req.body;
@@ -313,6 +270,11 @@ const getFilteredProperties = catchAsync(async (req, resp, next) => {
             status: PROPERTY_STATUS.VERIFIED
         },
     };
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    query.where.createdAt = { [Op.gte]: thirtyDaysAgo };
+
     // Add filters conditionally
     if (city) query.where.city = { [Op.iLike]: `%${city}%` }; // Case-insensitive filter
     if (country) query.where.country = { [Op.iLike]: `%${country}%` };
@@ -491,8 +453,14 @@ const updateProperty = catchAsync(async (req, resp, next) => {
     result.title = body.title;
     result.location = body.location;
     result.latitude = body.latitude;
+    result.totalPrice = body.amount;
     result.description = body.description;
     result.status = PROPERTY_STATUS.PENDING_VERIFICATION;
+    result.streetAddress = body.streetAddress;
+    result.bedrooms = body.bedrooms;
+    result.bathrooms = body.bathrooms;
+    result.parkingSpots = body.parkingSpots
+
     // result.propertyTypeId = body.propertyTypeId;
 
     const updatedResult = await result.save();
@@ -569,7 +537,7 @@ const updateRejectionMessage = catchAsync(async (req, resp, next) => {
         return next(new AppError('Invalid project id'), 400);
     }
     result.rejectionMessage = body.rejectionMessage;
-
+    result.status = "REJECTED";
     await result.save();
     return resp.json({
         status: 'success',

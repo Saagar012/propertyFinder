@@ -26,8 +26,10 @@ const signup = catchAsync (async(req,res,next) => {
             firstName: body.firstName,
             lastName: body.lastName,
             email: body.email,
+            phoneNumber:body.phoneNumber,
             password: body.password,
             confirmPassword: body.confirmPassword
+
         })
         if(!newUser){
             return next(new AppError('Failed to create the new user', 400));
@@ -67,7 +69,9 @@ const login = catchAsync(async (req,res,next) => {
         status: 'success',
         user: {
             firstName: result.firstName,
-            email:result.email
+            lastName: result.lastName,
+            email:result.email,
+            phoneNumber:result.phoneNumber
         },
         token,
     })

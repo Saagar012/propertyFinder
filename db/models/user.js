@@ -79,7 +79,9 @@ const user = sequelize.define('user',
           throw new AppError("Password and confirm password must be same", 400);
         }
       }
-
+    },
+    phoneNumber: {
+      type: DataTypes.STRING
     },
     createdAt: {
       allowNull: false,
